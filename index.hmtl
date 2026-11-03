@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mi primera página</title>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+
+<h1>Hola Mundo</h1>
+
+<p>Esta es mi primera página web en GitHub Pages.</p>
+
+</body>
+</html>
