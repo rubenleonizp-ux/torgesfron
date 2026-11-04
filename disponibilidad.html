@@ -8,11 +8,11 @@
 :root{
   --pared:#1d5c43; --pared-tx:#f2f7f3;
   --bg:#eef2ee; --card:#ffffff; --tx:#14231b; --mut:#5b6b62; --brd:#c9d5cc;
-  --chip:#e4ebe5; --on:#1d5c43; --on-tx:#ffffff; --linea:#c8382d; --sel:#c8382d; --sel-tx:#ffffff;
+  --chip:#e4ebe5; --on:#1d5c43; --on-tx:#ffffff; --linea:#c8382d;
 }
 @media (prefers-color-scheme:dark){
   :root{--bg:#101612; --card:#18211b; --tx:#e8efe9; --mut:#9db0a3; --brd:#2e3d33;
-        --chip:#233028; --on:#4fb383; --on-tx:#08170f; --pared:#0f3a2a; --sel:#e0554a;}
+        --chip:#233028; --on:#4fb383; --on-tx:#08170f; --pared:#0f3a2a; --linea:#e0554a;}
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -21,47 +21,30 @@ body{margin:0;background:var(--bg);color:var(--tx);
 header{background:var(--pared);color:var(--pared-tx);padding:22px 16px 18px;border-bottom:4px solid var(--linea)}
 header h1{margin:0 auto;max-width:640px;font-size:1.45rem;font-weight:800;letter-spacing:-.01em}
 header p{margin:6px auto 0;max-width:640px;opacity:.9;font-size:.95rem}
-main{max-width:640px;margin:0 auto;padding:16px 14px 40px}
-label.nombre{display:block;font-weight:700;margin-bottom:14px}
+main{max-width:640px;margin:0 auto;padding:16px 10px 40px}
+label.nombre{display:block;font-weight:700;margin:0 4px 6px}
 label.nombre input{display:block;width:100%;margin-top:6px;padding:12px;font:inherit;color:var(--tx);
   background:var(--card);border:2px solid var(--brd);border-radius:8px}
 input:focus-visible,button:focus-visible{outline:3px solid var(--linea);outline-offset:2px}
-.modo{display:flex;gap:6px;margin-bottom:6px}
-.modo button{flex:1;padding:11px 6px;font:inherit;font-weight:700;color:var(--tx);background:var(--chip);
-  border:2px solid transparent;border-radius:8px;cursor:pointer}
-.modo button.on{background:var(--on);color:var(--on-tx)}
-.modo button:disabled{opacity:.5;cursor:not-allowed}
-h2{margin:22px 0 8px;font-size:1.1rem;font-weight:800}
-.semana{background:var(--card);border:1px solid var(--brd);border-left:5px solid var(--pared);
-  border-radius:8px;padding:12px;margin-bottom:10px}
-.semana strong{display:block;margin-bottom:8px}
-.dias7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
-.dia{text-align:center;padding:5px 0;border:1px solid var(--brd);border-radius:6px;background:var(--chip);line-height:1.2}
-.dia span{display:block;font-size:.72rem;color:var(--mut)}
-.dia b{font-size:1rem}
-.dia i{display:block;font-style:normal;font-size:.65rem;color:var(--linea)}
-.fila{display:flex;gap:6px}
-.chip{flex:1 1 0;padding:11px 6px;font:inherit;font-size:.95rem;color:var(--tx);background:var(--chip);
-  border:2px solid transparent;border-radius:8px;cursor:pointer}
-.chip.on{background:var(--on);color:var(--on-tx);font-weight:700}
-.mes{background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:12px;margin-bottom:12px}
-.mes h3{margin:0 0 8px;font-size:1.05rem}
-.g7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cab{text-align:center;font-size:.75rem;color:var(--mut);padding-bottom:2px}
-.cd{aspect-ratio:1;padding:0;font:inherit;color:var(--tx);background:var(--chip);border:2px solid transparent;
-  border-radius:6px;cursor:pointer}
-.cd.on{background:var(--sel);color:var(--sel-tx);font-weight:700}
-.cd:disabled{background:transparent;color:var(--mut);opacity:.4;cursor:not-allowed}
-.nota{color:var(--mut);font-size:.92rem;margin:0 0 10px}
-.horario{display:grid;gap:4px;background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:10px}
-.hc{text-align:center;font-size:.8rem;font-weight:700;color:var(--mut)}
-.hh{display:flex;align-items:center;font-size:.85rem;color:var(--mut);padding-right:6px}
-.hs{min-height:44px;padding:0;font:inherit;font-weight:700;color:var(--sel-tx);background:var(--chip);
+h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
+.nota{color:var(--mut);font-size:.92rem;margin:8px 4px}
+.semana{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:10px 8px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 8px}
+.top span{color:var(--mut);font-size:.9rem}
+.cols{display:grid;gap:4px}
+.col{display:flex;flex-direction:column;gap:4px}
+.dh{text-align:center;font-size:11px;line-height:1.15;color:var(--mut);padding-bottom:2px}
+.dh b{display:block;font-size:15px;color:var(--tx)}
+.dh.f,.dh.f b{color:var(--linea)}
+.hs{min-height:44px;width:100%;padding:0;font:inherit;font-size:.85rem;color:var(--tx);background:var(--chip);
   border:2px solid transparent;border-radius:6px;cursor:pointer}
-.hs.on{background:var(--on);color:var(--on-tx)}
-.hs.no{background:transparent;border:1px dashed var(--brd);cursor:default;opacity:.6}
-.salida{margin-top:26px;background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:14px}
-.salida h2{margin-top:0}
+.hs.on{background:var(--on);color:var(--on-tx);font-weight:700}
+.acciones2{display:flex;gap:8px;margin-top:10px}
+.b{min-height:44px;flex:1;padding:0 8px;font:inherit;font-weight:700;color:var(--tx);background:transparent;
+  border:2px solid var(--on);border-radius:8px;cursor:pointer}
+.b.pri{flex:1.5;background:var(--on);color:var(--on-tx)}
+.salida{margin-top:22px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px}
+.salida h2{margin:0 0 8px}
 .salida pre{margin:0 0 12px;white-space:pre-wrap;word-break:break-word;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;
   background:var(--chip);padding:12px;border-radius:8px;min-height:60px}
 .acciones{display:flex;gap:8px;flex-wrap:wrap}
@@ -75,17 +58,12 @@ h2{margin:22px 0 8px;font-size:1.1rem;font-weight:800}
 <body>
 <header>
   <h1>Disponibilidad de la liga</h1>
-  <p>Indica cuándo puedes jugar y envía el mensaje al grupo por WhatsApp.</p>
+  <p>Indica cuándo puedes jugar y envía el mensaje por WhatsApp.</p>
 </header>
 <main>
   <label class="nombre">Tu nombre, como sales en el grupo
     <input id="nombre" autocomplete="name" placeholder="Nombre o apellido">
   </label>
-  <div class="modo" role="group" aria-label="Forma de indicar la disponibilidad">
-    <button data-m="turnos">Turnos</button>
-    <button data-m="calendario">Calendario</button>
-    <button data-m="semana">Semana</button>
-  </div>
   <div id="contenido"></div>
   <section class="salida">
     <h2>Mensaje</h2>
@@ -98,21 +76,19 @@ h2{margin:22px 0 8px;font-size:1.1rem;font-weight:800}
   </section>
 </main>
 <script>
-// ------------------------- AJUSTES -------------------------
-const CONFIG = {
-  NUM_SEMANAS: 10,                       // semanas del modo Turnos
-  MAX_MESES: 3,                          // máximo de meses en Turnos; Calendario muestra siempre 3
-  TURNOS: ['Mañana', 'Tarde', 'Noche'],
-  FINES_DE_SEMANA: false,                // true = sábados y domingos seleccionables en Calendario
-  WHATSAPP_DESTINO: ''                   // p. ej. '34600111222'. Vacío = la persona elige el chat
-};
-// -----------------------------------------------------------
-const DIAS7 = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const NUM_SEMANAS = 5;
+// Enlace: ?t=T05&p=ID_DEL_ARCHIVO_PARAM. De ese archivo se leen las hojas AGENDA y PARAM (parámetro TELEFONO).
+const params = new URLSearchParams(location.search);
+const torneo = (params.get('t') || '').trim();
+const archivoParam = (params.get('p') || '').trim();
+
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const OFF = { L: 0, M: 1, X: 2, J: 3, V: 4, S: 5, D: 6 };
 const $ = id => document.getElementById(id);
 const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
 const pad = n => String(n).padStart(2, '0');
-const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const ymd = d => d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+const mes3 = m => MESES[m].slice(0, 3).toLowerCase();
 
 function semanaISO(d) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -121,121 +97,31 @@ function semanaISO(d) {
   return Math.ceil(((t - ini) / 86400000 + 1) / 7);
 }
 
-// Primer lunes disponible: de lunes a viernes, el de la semana siguiente;
-// sábado y domingo, el de la siguiente a esa.
+// Primera semana: de lunes a viernes, la siguiente; sábado y domingo, la siguiente a esa.
 const hoy = new Date();
 const l0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
 l0.setDate(l0.getDate() - ((l0.getDay() + 6) % 7));
 const desp = (hoy.getDay() === 0 || hoy.getDay() === 6) ? 2 : 1;
 const desdeInicio = n => new Date(l0.getFullYear(), l0.getMonth(), l0.getDate() + 7 * desp + n);
-const inicio = desdeInicio(0);
 
-// Modo Turnos: semanas agrupadas por el mes de su lunes
-const grupos = [];
-for (let i = 0; i < CONFIG.NUM_SEMANAS; i++) {
-  const lunes = desdeInicio(7 * i), clave = lunes.getFullYear() * 12 + lunes.getMonth();
-  let g = grupos[grupos.length - 1];
-  if (!g || g.clave !== clave) {
-    if (grupos.length === CONFIG.MAX_MESES) break;
-    g = { clave, mes: MESES[lunes.getMonth()], semanas: [] };
-    grupos.push(g);
-  }
-  g.semanas.push({
-    iso: iso(lunes), num: semanaISO(lunes), mesLunes: lunes.getMonth(),
-    dias: DIAS7.map((n, k) => { const d = desdeInicio(7 * i + k); return { nombre: n, num: d.getDate(), mes: d.getMonth() }; })
-  });
-}
-const semanas = grupos.flatMap(g => g.semanas);
-
-// Modo Calendario: 3 meses completos desde el mes del primer lunes
-const meses = [0, 1, 2].map(m => {
-  const p = new Date(inicio.getFullYear(), inicio.getMonth() + m, 1);
-  const total = new Date(p.getFullYear(), p.getMonth() + 1, 0).getDate();
-  const dias = [];
-  for (let n = 1; n <= total; n++) {
-    const d = new Date(p.getFullYear(), p.getMonth(), n), wd = (d.getDay() + 6) % 7;
-    dias.push({ iso: iso(d), num: n, ok: d >= inicio && (CONFIG.FINES_DE_SEMANA || wd < 5) });
-  }
-  return { clave: p.getFullYear() + '-' + pad(p.getMonth() + 1), titulo: MESES[p.getMonth()] + ' ' + p.getFullYear(),
-           vacios: (p.getDay() + 6) % 7, dias };
-});
-
-const params = new URLSearchParams(location.search);
-const torneo = (params.get('t') || '').trim();      // p. ej. ?t=T05
-const archivoParam = (params.get('p') || '').trim(); // ID del archivo ID_PARAM en Google Drive
-const destino = (params.get('w') || CONFIG.WHATSAPP_DESTINO).replace(/\D/g, ''); // ?w=34600111222 (vacío = elegir chat)
-let agenda = { estado: archivoParam ? 'cargando' : 'error',
-               msg: 'Este enlace no indica de qué torneo leer la agenda.' };
-const horSel = new Set();    // 'L|19:00'
-let modo = 'turnos';
-const turnoSel = {};          // iso del lunes -> turno
-const diasSel = new Set();    // iso de cada día
-
-function mensaje() {
-  const nombre = $('nombre').value.trim(), lineas = [];
-  if (modo === 'turnos') {
-    semanas.forEach(s => { if (turnoSel[s.iso]) lineas.push(s.iso + ' | ' + turnoSel[s.iso]); });
-  } else if (modo === 'semana') {
-    if (agenda.estado === 'ok') agenda.dias.forEach(d => {
-      const hs = agenda.horas.filter(h => horSel.has(d.cod + '|' + h.hora)).map(h => h.hora);
-      if (hs.length) lineas.push(d.cod + ' | ' + hs.join(' '));
-    });
-  } else {
-    meses.forEach(m => {
-      const ds = m.dias.filter(d => diasSel.has(d.iso)).map(d => d.num);
-      if (ds.length) lineas.push(m.clave + ' | ' + ds.join(' '));
-    });
-  }
-  return { nombre, lineas, texto: ['!!D#-' + torneo, 'DISPONIBILIDAD', ...(torneo ? ['Torneo: ' + torneo] : []), 'Jugador: ' + (nombre || '?'), 'Modo: ' + modo.toUpperCase(), ...lineas].join('\n') };
-}
-
-function renderTurnos(cont) {
-  grupos.forEach(g => {
-    cont.appendChild(el('h2', '', g.mes));
-    g.semanas.forEach(s => {
-      const card = el('div', 'semana');
-      card.appendChild(el('strong', '', 'Semana ' + s.num));
-      const fd = el('div', 'dias7');
-      s.dias.forEach(d => {
-        const c = el('div', 'dia');
-        c.appendChild(el('span', '', d.nombre));
-        c.appendChild(el('b', '', String(d.num)));
-        if (d.mes !== s.mesLunes) c.appendChild(el('i', '', MESES[d.mes].slice(0, 3).toLowerCase()));
-        fd.appendChild(c);
-      });
-      card.appendChild(fd);
-      const ft = el('div', 'fila');
-      CONFIG.TURNOS.forEach(t => {
-        const b = el('button', 'chip' + (turnoSel[s.iso] === t ? ' on' : ''), t);
-        b.setAttribute('aria-pressed', turnoSel[s.iso] === t);
-        b.onclick = () => { turnoSel[s.iso] = turnoSel[s.iso] === t ? '' : t; actualizar(); };
-        ft.appendChild(b);
-      });
-      card.appendChild(ft);
-      cont.appendChild(card);
-    });
+const semanas = [];   // sel = Set de 'L|19:00'
+for (let i = 0; i < NUM_SEMANAS; i++) {
+  const f = k => desdeInicio(7 * i + k), lunes = f(0), dom = f(6);
+  semanas.push({
+    num: semanaISO(lunes), mes: MESES[lunes.getMonth()], clave: lunes.getFullYear() * 12 + lunes.getMonth(),
+    rango: lunes.getMonth() === dom.getMonth()
+      ? lunes.getDate() + ' – ' + dom.getDate() + ' ' + mes3(dom.getMonth())
+      : lunes.getDate() + ' ' + mes3(lunes.getMonth()) + ' – ' + dom.getDate() + ' ' + mes3(dom.getMonth()),
+    nums: Object.fromEntries(Object.entries(OFF).map(([c, k]) => [c, f(k).getDate()])),
+    fechas: Object.fromEntries(Object.entries(OFF).map(([c, k]) => [c, ymd(f(k))])),
+    sel: new Set()
   });
 }
 
-function renderCalendario(cont) {
-  meses.forEach(m => {
-    const card = el('div', 'mes');
-    card.appendChild(el('h3', '', m.titulo));
-    const g = el('div', 'g7');
-    ['L','M','X','J','V','S','D'].forEach(l => g.appendChild(el('div', 'cab', l)));
-    for (let i = 0; i < m.vacios; i++) g.appendChild(el('div'));
-    m.dias.forEach(d => {
-      const b = el('button', 'cd' + (diasSel.has(d.iso) ? ' on' : ''), String(d.num));
-      b.disabled = !d.ok;
-      b.setAttribute('aria-pressed', diasSel.has(d.iso));
-      b.onclick = () => { diasSel.has(d.iso) ? diasSel.delete(d.iso) : diasSel.add(d.iso); actualizar(); };
-      g.appendChild(b);
-    });
-    card.appendChild(g);
-    cont.appendChild(card);
-  });
-}
+let agenda = { estado: archivoParam ? 'cargando' : 'error', msg: 'Este enlace no indica de qué torneo leer la agenda.' };
+let telefono = '';
 
+// ---------- lectura de las hojas ----------
 function parseCSV(t) {
   const filas = []; let r = [], c = '', q = false;
   for (let i = 0; i < t.length; i++) {
@@ -249,81 +135,127 @@ function parseCSV(t) {
   if (c !== '' || r.length) { r.push(c); filas.push(r); }
   return filas;
 }
+const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
-// Hoja AGENDA: primera columna HORARIO, siguientes columnas = días; SI = se puede elegir, NO = solo relleno.
+// AGENDA: una columna por día (LUNES...DOMINGO) y debajo, solo las horas disponibles de ese día.
 function construirAgenda(filas) {
-  const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
   const codigos = { lunes: 'L', martes: 'M', miercoles: 'X', jueves: 'J', viernes: 'V', sabado: 'S', domingo: 'D' };
+  const ABREV = { L: 'Lun', M: 'Mar', X: 'Mié', J: 'Jue', V: 'Vie', S: 'Sáb', D: 'Dom' };
   const f = filas.filter(r => r.some(c => c.trim() !== ''));
-  if (!f.length || norm(f[0][0]) !== 'horario') throw new Error('formato');
-  const cols = f[0].map((n, i) => ({ n: n.trim(), i })).slice(1).filter(c => c.n);
-  const dias = cols.map(c => ({
-    cod: codigos[norm(c.n)] || c.n.charAt(0).toUpperCase(),
-    abrev: c.n.charAt(0).toUpperCase() + c.n.slice(1, 3).toLowerCase(), i: c.i }));
-  const horas = f.slice(1).map(r => {
-    const m = /^(\d{1,2}):(\d{2})/.exec(r[0].trim());
-    return { hora: m ? pad(+m[1]) + ':' + m[2] : r[0].trim(), ok: dias.map(d => norm(r[d.i] || '') === 'si') };
+  const dias = [];
+  (f[0] || []).forEach((n, i) => {
+    const cod = codigos[norm(n)];
+    if (!cod || dias.some(d => d.cod === cod)) return;
+    const horas = f.slice(1).map(r => (r[i] || '').trim()).filter(Boolean).map(x => {
+      const m = /^(\d{1,2}):(\d{2})/.exec(x);
+      return m ? pad(+m[1]) + ':' + m[2] : x;
+    });
+    dias.push({ cod, abrev: ABREV[cod], horas: [...new Set(horas)].sort() });
   });
-  return { estado: 'ok', dias, horas };
+  if (!dias.length) throw new Error('formato');
+  dias.sort((a, b) => OFF[a.cod] - OFF[b.cod]);
+  return { estado: 'ok', dias };
 }
 
-async function cargarAgenda() {
+// PARAM: filas "parametro | valor". Devuelve el valor de la fila cuyo nombre coincide.
+function leerParametro(filas, clave) {
+  const f = filas.find(r => norm(r[0] || '') === norm(clave));
+  return f ? String(f[1] || '').trim() : '';
+}
+function limpiarTelefono(v) {
+  let d = String(v || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  return d.length === 9 ? '34' + d : d;   // sin prefijo: se asume España
+}
+
+async function cargarDatos() {
   if (!archivoParam) return;
-  try {
-    const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivoParam) + '/gviz/tq?tqx=out:csv&sheet=AGENDA';
-    const r = await fetch(url);
+  const base = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivoParam) + '/gviz/tq?tqx=out:csv&headers=1&sheet=';
+  const pedir = async hoja => {
+    const r = await fetch(base + hoja);
     if (!r.ok) throw new Error('http');
-    agenda = construirAgenda(parseCSV(await r.text()));
+    return parseCSV(await r.text());
+  };
+  const [ag, pa] = await Promise.allSettled([pedir('AGENDA'), pedir('PARAM')]);
+  try {
+    if (ag.status !== 'fulfilled') throw ag.reason;
+    agenda = construirAgenda(ag.value);
   } catch (e) {
     agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo. Comprueba que el archivo esté compartido para ver con el enlace y que la hoja se llame AGENDA.' };
   }
+  if (pa.status === 'fulfilled') telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
   actualizar();
 }
 
-function renderSemana(cont) {
+// ---------- pantalla ----------
+function mensaje() {
+  const nombre = $('nombre').value.trim(), lineas = [];
+  if (agenda.estado === 'ok') semanas.forEach(w => agenda.dias.forEach(d => {
+    const hs = d.horas.filter(x => w.sel.has(d.cod + '|' + x));
+    if (hs.length) lineas.push(w.fechas[d.cod] + ' ' + hs.map(x => x.replace(':', '')).join(' '));
+  }));
+  return { nombre, lineas, texto: ['!!D#-' + torneo, 'Jugador: ' + (nombre || '?'), ...lineas].join('\n') };
+}
+
+function render(cont) {
   if (agenda.estado !== 'ok') {
     cont.appendChild(el('p', 'nota', agenda.estado === 'cargando' ? 'Cargando la agenda…' : agenda.msg));
     return;
   }
-  cont.appendChild(el('p', 'nota', 'Marca las horas en que sueles poder jugar cada día. Las casillas vacías no están disponibles.'));
-  const t = el('div', 'horario');
-  t.style.gridTemplateColumns = 'auto repeat(' + agenda.dias.length + ', 1fr)';
-  t.appendChild(el('div', 'hc'));
-  agenda.dias.forEach(d => t.appendChild(el('div', 'hc', d.abrev)));
-  agenda.horas.forEach(h => {
-    t.appendChild(el('div', 'hh', h.hora));
-    agenda.dias.forEach((d, k) => {
-      if (!h.ok[k]) { t.appendChild(el('div', 'hs no')); return; }
-      const clave = d.cod + '|' + h.hora;
-      const b = el('button', 'hs' + (horSel.has(clave) ? ' on' : ''), horSel.has(clave) ? '✓' : '');
-      b.setAttribute('aria-label', d.abrev + ' ' + h.hora);
-      b.setAttribute('aria-pressed', horSel.has(clave));
-      b.onclick = () => { horSel.has(clave) ? horSel.delete(clave) : horSel.add(clave); actualizar(); };
-      t.appendChild(b);
+  cont.appendChild(el('p', 'nota', 'Marca las horas en que sí puedes jugar.'));
+  let claveAct = null;
+  semanas.forEach(w => {
+    if (w.clave !== claveAct) { claveAct = w.clave; cont.appendChild(el('h2', '', w.mes)); }
+    const card = el('div', 'semana');
+    const top = el('div', 'top');
+    top.appendChild(el('strong', '', 'Semana ' + w.num));
+    top.appendChild(el('span', '', w.rango));
+    card.appendChild(top);
+    const g = el('div', 'cols');
+    g.style.gridTemplateColumns = 'repeat(' + agenda.dias.length + ', 1fr)';
+    agenda.dias.forEach(d => {
+      const col = el('div', 'col');
+      const cab = el('div', 'dh' + (d.cod === 'S' || d.cod === 'D' ? ' f' : ''), d.abrev);
+      cab.appendChild(el('b', '', String(w.nums[d.cod])));
+      col.appendChild(cab);
+      d.horas.forEach(x => {
+        const k = d.cod + '|' + x, on = w.sel.has(k);
+        const b = el('button', 'hs' + (on ? ' on' : ''), x);
+        b.setAttribute('aria-pressed', on);
+        b.setAttribute('aria-label', d.abrev + ' ' + w.nums[d.cod] + ', ' + x);
+        b.onclick = () => { on ? w.sel.delete(k) : w.sel.add(k); actualizar(); };
+        col.appendChild(b);
+      });
+      g.appendChild(col);
     });
+    card.appendChild(g);
+    const acc = el('div', 'acciones2');
+    const l = el('button', 'b', 'Limpiar semana');
+    l.onclick = () => { w.sel.clear(); actualizar(); };
+    const c = el('button', 'b pri', 'Copiar a todas las semanas');
+    c.onclick = () => { semanas.forEach(o => { if (o !== w) o.sel = new Set(w.sel); }); actualizar(); };
+    acc.append(l, c);
+    card.appendChild(acc);
+    cont.appendChild(card);
   });
-  cont.appendChild(t);
 }
 
 function actualizar() {
-  document.querySelectorAll('.modo button').forEach(b => b.classList.toggle('on', b.dataset.m === modo));
   const cont = $('contenido');
   cont.innerHTML = '';
-  ({ turnos: renderTurnos, calendario: renderCalendario, semana: renderSemana })[modo](cont);
+  render(cont);
   const m = mensaje(), listo = m.nombre && m.lineas.length;
   $('msg').textContent = m.texto;
   $('wa').disabled = !listo;
   $('copiar').disabled = !listo;
   $('aviso').textContent = !m.nombre ? 'Escribe tu nombre para poder enviar.'
-    : !m.lineas.length ? (modo === 'turnos' ? 'Elige un turno en las semanas en que puedes jugar. Las semanas sin turno se entienden como no disponible.'
-                                            : modo === 'semana' ? 'Marca las horas en que puedes jugar cada día.' : 'Marca los días en que puedes jugar.') : '';
+    : !m.lineas.length ? 'Marca las horas en que puedes jugar.' : '';
   try { localStorage.setItem('liga_nombre', m.nombre); } catch (e) {}
 }
 
-document.querySelectorAll('.modo button').forEach(b => b.onclick = () => { if (!b.disabled) { modo = b.dataset.m; actualizar(); } });
 $('nombre').addEventListener('input', actualizar);
 $('wa').onclick = () => {
-  window.open('https://wa.me/' + destino + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener');
+  window.open('https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener');
 };
 $('copiar').onclick = async () => {
   try { await navigator.clipboard.writeText(mensaje().texto); $('aviso').textContent = 'Texto copiado.'; }
@@ -335,7 +267,7 @@ $('copiar').onclick = async () => {
 };
 try { $('nombre').value = localStorage.getItem('liga_nombre') || ''; } catch (e) {}
 actualizar();
-cargarAgenda();
+cargarDatos();
 </script>
 </body>
 </html>
