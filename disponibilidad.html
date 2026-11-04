@@ -163,6 +163,7 @@ const meses = [0, 1, 2].map(m => {
 const params = new URLSearchParams(location.search);
 const torneo = (params.get('t') || '').trim();      // p. ej. ?t=T05
 const archivoParam = (params.get('p') || '').trim(); // ID del archivo ID_PARAM en Google Drive
+const destino = (params.get('w') || CONFIG.WHATSAPP_DESTINO).replace(/\D/g, ''); // ?w=34600111222 (vacío = elegir chat)
 let agenda = { estado: archivoParam ? 'cargando' : 'error',
                msg: 'Este enlace no indica de qué torneo leer la agenda.' };
 const horSel = new Set();    // 'L|19:00'
@@ -322,7 +323,7 @@ function actualizar() {
 document.querySelectorAll('.modo button').forEach(b => b.onclick = () => { if (!b.disabled) { modo = b.dataset.m; actualizar(); } });
 $('nombre').addEventListener('input', actualizar);
 $('wa').onclick = () => {
-  window.open('https://wa.me/' + CONFIG.WHATSAPP_DESTINO + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener');
+  window.open('https://wa.me/' + destino + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener');
 };
 $('copiar').onclick = async () => {
   try { await navigator.clipboard.writeText(mensaje().texto); $('aviso').textContent = 'Texto copiado.'; }
