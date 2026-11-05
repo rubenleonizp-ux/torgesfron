@@ -92,8 +92,9 @@ h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
   </section>
 </main>
 <script>
+'use strict';
+
 const NUM_SEMANAS = 5;
-// Enlace: ?t=T05&p=ID_DEL_ARCHIVO_PARAM. De ese archivo se leen las hojas AGENDA y PARAM (parámetro TELEFONO).
 const params = new URLSearchParams(location.search);
 const torneo = (params.get('t') || '').trim();
 const archivoParam = (params.get('p') || '').trim();
@@ -113,14 +114,13 @@ function semanaISO(d) {
   return Math.ceil(((t - ini) / 86400000 + 1) / 7);
 }
 
-// Primera semana: de lunes a viernes, la siguiente; sábado y domingo, la siguiente a esa.
 const hoy = new Date();
 const l0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
 l0.setDate(l0.getDate() - ((l0.getDay() + 6) % 7));
 const desp = (hoy.getDay() === 0 || hoy.getDay() === 6) ? 2 : 1;
 const desdeInicio = n => new Date(l0.getFullYear(), l0.getMonth(), l0.getDate() + 7 * desp + n);
 
-const semanas = [];   // sel = Set de 'L|19:00'
+const semanas = [];
 for (let i = 0; i < NUM_SEMANAS; i++) {
   const f = k => desdeInicio(7 * i + k), lunes = f(0), dom = f(6);
   semanas.push({
@@ -136,29 +136,36 @@ for (let i = 0; i < NUM_SEMANAS; i++) {
 
 let agenda = { estado: archivoParam ? 'cargando' : 'error', msg: 'Este enlace no indica de qué torneo leer la agenda.' };
 let telefono = '';
-let jugadores = null, jugadorSel = null, errorJugadores = '';   // lista de PARTICIPANTES (null = cargando)
+let jugadores = null;
+let jugadorSel = null;
+let errorJugadores = '';
 
-// ---------- lectura de las hojas ----------
 function parseCSV(t) {
   const filas = []; let r = [], c = '', q = false;
   for (let i = 0; i < t.length; i++) {
     const ch = t[i];
-    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
-    else if (ch === '"') q = true;
+    if (q) {
+      if (ch === '"') {
+        if (t[i + 1] === '"') { c += '"'; i++; }
+        else q = false;
+      } else c += ch;
+    } else if (ch === '"') q = true;
     else if (ch === ',') { r.push(c); c = ''; }
-    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; r.push(c); c = ''; filas.push(r); r = []; }
-    else c += ch;
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && t[i + 1] === '\n') i++;
+      r.push(c); c = ''; filas.push(r); r = [];
+    } else c += ch;
   }
   if (c !== '' || r.length) { r.push(c); filas.push(r); }
   return filas;
 }
-const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
-// AGENDA: una columna por día (LUNES...DOMINGO) y debajo, solo las horas disponibles de ese día.
+const norm = s => String(s).replace(/^\uFEFF/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
 function construirAgenda(filas) {
   const codigos = { lunes: 'L', martes: 'M', miercoles: 'X', jueves: 'J', viernes: 'V', sabado: 'S', domingo: 'D' };
   const ABREV = { L: 'Lun', M: 'Mar', X: 'Mié', J: 'Jue', V: 'Vie', S: 'Sáb', D: 'Dom' };
-  const f = filas.filter(r => r.some(c => c.trim() !== ''));
+  const f = filas.filter(r => r.some(c => String(c).trim() !== ''));
   const dias = [];
   (f[0] || []).forEach((n, i) => {
     const cod = codigos[norm(n)];
@@ -169,81 +176,160 @@ function construirAgenda(filas) {
     });
     dias.push({ cod, abrev: ABREV[cod], horas: [...new Set(horas)].sort() });
   });
-  if (!dias.length) throw new Error('formato');
+  if (!dias.length) throw new Error('Formato de AGENDA no reconocido');
   dias.sort((a, b) => OFF[a.cod] - OFF[b.cod]);
   return { estado: 'ok', dias };
 }
 
-// PARAM: filas "parametro | valor". Devuelve el valor de la fila cuyo nombre coincide.
 function leerParametro(filas, clave) {
-  const f = filas.find(r => norm(r[0] || '') === norm(clave));
-  return f ? String(f[1] || '').trim() : '';
+  const objetivo = norm(clave);
+  const fila = filas.find(r => norm(r[0] || '') === objetivo);
+  const valor = fila ? String(fila[1] || '').trim() : '';
+  console.log('[PARAM] Buscar', clave, '=> fila:', fila, '=> valor:', valor);
+  return valor;
 }
+
 function limpiarTelefono(v) {
   let d = String(v || '').replace(/\D/g, '');
   if (d.startsWith('00')) d = d.slice(2);
-  return d.length === 9 ? '34' + d : d;   // sin prefijo: se asume España
+  return d.length === 9 ? '34' + d : d;
 }
 
 const digitos = s => String(s || '').replace(/\D/g, '');
 const clave9 = s => { const d = digitos(s); return d.length > 9 ? d.slice(-9) : d; };
 
-// PARTICIPANTES (archivo indicado por LINKPAR): se usan las columnas id, teléfono y nombre/alias.
 async function cargarJugadores(idPart) {
+  console.group('[PARTICIPANTES] Diagnóstico');
   try {
+    console.log('LINKPAR recibido:', JSON.stringify(idPart));
     if (!idPart) throw new Error('sin LINKPAR');
-    const r = await fetch('https://docs.google.com/spreadsheets/d/' + encodeURIComponent(idPart) + '/gviz/tq?tqx=out:csv&headers=1&sheet=PARTICIPANTES');
-    if (!r.ok) throw new Error('http');
-    const filas = parseCSV(await r.text());
+
+    const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(idPart) +
+      '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent('PARTICIPANTES');
+    console.log('URL solicitada:', url);
+
+    const r = await fetch(url, { cache: 'no-store' });
+    console.log('Respuesta HTTP:', r.status, r.statusText, 'URL final:', r.url);
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText);
+
+    const texto = await r.text();
+    console.log('CSV recibido, primeros 500 caracteres:', texto.slice(0, 500));
+    const filas = parseCSV(texto);
+    console.log('Filas interpretadas:', filas);
+
     const cab = (filas[0] || []).map(norm);
+    console.log('Cabeceras normalizadas:', cab);
+
     const col = nombres => cab.findIndex(c => nombres.includes(c));
-    const iId = col(['id', 'id_participante', 'idparticipante']), iTel = col(['telefono', 'tel', 'movil']);
-    const iNom = col(['nombre_completo', 'nombre', 'jugador']), iAli = col(['alias']);
-    if (iId < 0 || iTel < 0) throw new Error('formato');
+    const iId = col(['id', 'id_participante', 'idparticipante']);
+    const iTel = col(['telefono', 'tel', 'movil']);
+    const iNom = col(['nombre_completo', 'nombre', 'jugador']);
+    const iAli = col(['alias']);
+    console.log('Índices:', { iId, iTel, iNom, iAli });
+
+    if (iId < 0 || iTel < 0) throw new Error('formato: faltan las columnas id o telefono');
+
     jugadores = filas.slice(1).map(f => ({
       id: String(f[iId] || '').trim(),
       nombre: String((iNom >= 0 && f[iNom]) || (iAli >= 0 && f[iAli]) || '').trim(),
       tel: clave9(f[iTel])
     })).filter(j => j.id && j.tel);
-    if (!jugadores.length) throw new Error('vacío');
+
+    console.log('Jugadores válidos:', jugadores);
+    if (!jugadores.length) throw new Error('vacío: no hay filas con id y teléfono válidos');
+
     errorJugadores = '';
     let guardado = null;
     try { guardado = localStorage.getItem('liga_jugador_' + torneo); } catch (e) {}
     jugadorSel = jugadores.find(j => j.id === guardado) || null;
+    console.log('Carga correcta. Jugador guardado:', guardado, 'Jugador seleccionado:', jugadorSel);
   } catch (e) {
-  console.error('Error cargando participantes:', e);
-  jugadores = [];
-  errorJugadores =
-    'No se pudo cargar la lista de participantes. Motivo técnico: ' +
-    (e && e.message ? e.message : String(e));
-}
+    console.error('ERROR al cargar PARTICIPANTES:', e);
+    jugadores = [];
+    const motivo = e && e.message ? e.message : String(e);
+    errorJugadores = 'No se pudo cargar la lista de participantes. Motivo técnico: ' + motivo;
+  } finally {
+    console.groupEnd();
+  }
 }
 
 async function cargarDatos() {
-  if (!archivoParam) return;
-  const base = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivoParam) + '/gviz/tq?tqx=out:csv&headers=1&sheet=';
+  console.group('[INICIO] Carga de datos');
+  console.log('URL actual:', location.href);
+  console.log('Parámetro t:', JSON.stringify(torneo));
+  console.log('Parámetro p:', JSON.stringify(archivoParam));
+
+  if (!archivoParam) {
+    console.error('Falta el parámetro p en la URL');
+    console.groupEnd();
+    return;
+  }
+
+  const base = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivoParam) +
+    '/gviz/tq?tqx=out:csv&headers=1&sheet=';
+
   const pedir = async hoja => {
-    const r = await fetch(base + hoja);
-    if (!r.ok) throw new Error('http');
-    return parseCSV(await r.text());
+    const url = base + encodeURIComponent(hoja);
+    console.group('[HOJA] ' + hoja);
+    try {
+      console.log('URL solicitada:', url);
+      const r = await fetch(url, { cache: 'no-store' });
+      console.log('Respuesta HTTP:', r.status, r.statusText, 'URL final:', r.url);
+      if (!r.ok) throw new Error(hoja + ': HTTP ' + r.status + ' ' + r.statusText);
+      const texto = await r.text();
+      console.log('CSV recibido, primeros 500 caracteres:', texto.slice(0, 500));
+      const filas = parseCSV(texto);
+      console.log('Filas interpretadas:', filas);
+      return filas;
+    } catch (e) {
+      console.error('Error solicitando ' + hoja + ':', e);
+      throw e;
+    } finally {
+      console.groupEnd();
+    }
   };
+
   const [ag, pa] = await Promise.allSettled([pedir('AGENDA'), pedir('PARAM')]);
+  console.log('Resultado AGENDA:', ag);
+  console.log('Resultado PARAM:', pa);
+
   try {
     if (ag.status !== 'fulfilled') throw ag.reason;
     agenda = construirAgenda(ag.value);
   } catch (e) {
-    agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo. Comprueba que el archivo esté compartido para ver con el enlace y que la hoja se llame AGENDA.' };
+    console.error('Error procesando AGENDA:', e);
+    agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo. Motivo técnico: ' + (e.message || String(e)) };
   }
-  let idPart = '';
-  if (pa.status === 'fulfilled') {
-    telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
-    idPart = leerParametro(pa.value, 'LINKPAR');
+
+  if (pa.status !== 'fulfilled') {
+    const motivo = pa.reason && pa.reason.message ? pa.reason.message : String(pa.reason);
+    console.error('PARAM no se pudo descargar:', pa.reason);
+    jugadores = [];
+    errorJugadores = 'No se pudo leer la hoja PARAM. Motivo técnico: ' + motivo;
+    actualizar();
+    console.groupEnd();
+    return;
   }
+
+  console.log('PARAM completo:', pa.value);
+  telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
+  const idPart = leerParametro(pa.value, 'LINKPAR');
+  console.log('TELEFONO final para WhatsApp:', JSON.stringify(telefono));
+  console.log('LINKPAR final:', JSON.stringify(idPart));
+
+  if (!idPart) {
+    jugadores = [];
+    errorJugadores = 'La hoja PARAM se descargó, pero LINKPAR está vacío o no se encontró. Mira en consola el bloque [PARAM].';
+    actualizar();
+    console.groupEnd();
+    return;
+  }
+
   await cargarJugadores(idPart);
   actualizar();
+  console.groupEnd();
 }
 
-// ---------- pantalla ----------
 function mensaje() {
   const lineas = [];
   if (agenda.estado === 'ok') semanas.forEach(w => agenda.dias.forEach(d => {
@@ -353,15 +439,19 @@ $('wa').onclick = () => {
   window.open('https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener');
 };
 $('copiar').onclick = async () => {
-  try { await navigator.clipboard.writeText(mensaje().texto); $('aviso').textContent = 'Texto copiado.'; }
-  catch (e) {
+  try {
+    await navigator.clipboard.writeText(mensaje().texto);
+    $('aviso').textContent = 'Texto copiado.';
+  } catch (e) {
     const r = document.createRange(); r.selectNodeContents($('msg'));
     const s = getSelection(); s.removeAllRanges(); s.addRange(r);
     $('aviso').textContent = 'Texto seleccionado: cópialo con el menú del móvil.';
   }
 };
+
 actualizar();
 cargarDatos();
 </script>
 </body>
 </html>
+
