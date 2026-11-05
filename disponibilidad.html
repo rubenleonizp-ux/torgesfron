@@ -43,6 +43,15 @@ h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
 .b{min-height:44px;flex:1;padding:0 8px;font:inherit;font-weight:700;color:var(--tx);background:transparent;
   border:2px solid var(--on);border-radius:8px;cursor:pointer}
 .b.pri{flex:1.5;background:var(--on);color:var(--on-tx)}
+[hidden]{display:none!important}
+.quien{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);
+  border:1px solid var(--brd);border-radius:10px;padding:10px 12px}
+.quien small{display:block;color:var(--mut);font-size:.8rem}
+.quien strong{font-size:1.05rem}
+.quien .b{flex:0 0 auto;min-height:40px;padding:0 12px}
+.res{display:flex;flex-direction:column;gap:6px;margin:8px 0 0}
+.res button{min-height:44px;text-align:left;padding:0 12px;font:inherit;color:var(--tx);background:var(--card);
+  border:2px solid var(--brd);border-radius:8px;cursor:pointer}
 .salida{margin-top:22px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px}
 .salida h2{margin:0 0 8px}
 .salida pre{margin:0 0 12px;white-space:pre-wrap;word-break:break-word;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;
@@ -61,9 +70,16 @@ h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
   <p>Indica cuándo puedes jugar y envía el mensaje por WhatsApp.</p>
 </header>
 <main>
-  <label class="nombre">Tu nombre, como sales en el grupo
-    <input id="nombre" autocomplete="name" placeholder="Nombre o apellido">
-  </label>
+  <div id="buscar">
+    <label class="nombre" for="tel">Tu teléfono
+      <input id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="Escribe tu número">
+    </label>
+    <div id="resultados" class="res"></div>
+  </div>
+  <div id="elegido" class="quien" hidden>
+    <div><small>Jugador</small><strong id="nombreElegido"></strong></div>
+    <button id="cambiar" class="b">Cambiar jugador</button>
+  </div>
   <div id="contenido"></div>
   <section class="salida">
     <h2>Mensaje</h2>
@@ -120,6 +136,7 @@ for (let i = 0; i < NUM_SEMANAS; i++) {
 
 let agenda = { estado: archivoParam ? 'cargando' : 'error', msg: 'Este enlace no indica de qué torneo leer la agenda.' };
 let telefono = '';
+let jugadores = null, jugadorSel = null, errorJugadores = '';   // lista de PARTICIPANTES (null = cargando)
 
 // ---------- lectura de las hojas ----------
 function parseCSV(t) {
@@ -168,6 +185,37 @@ function limpiarTelefono(v) {
   return d.length === 9 ? '34' + d : d;   // sin prefijo: se asume España
 }
 
+const digitos = s => String(s || '').replace(/\D/g, '');
+const clave9 = s => { const d = digitos(s); return d.length > 9 ? d.slice(-9) : d; };
+
+// PARTICIPANTES (archivo indicado por LINKPAR): se usan las columnas id, teléfono y nombre/alias.
+async function cargarJugadores(idPart) {
+  try {
+    if (!idPart) throw new Error('sin LINKPAR');
+    const r = await fetch('https://docs.google.com/spreadsheets/d/' + encodeURIComponent(idPart) + '/gviz/tq?tqx=out:csv&headers=1&sheet=PARTICIPANTES');
+    if (!r.ok) throw new Error('http');
+    const filas = parseCSV(await r.text());
+    const cab = (filas[0] || []).map(norm);
+    const col = nombres => cab.findIndex(c => nombres.includes(c));
+    const iId = col(['id', 'id_participante', 'idparticipante']), iTel = col(['telefono', 'tel', 'movil']);
+    const iNom = col(['nombre_completo', 'nombre', 'jugador']), iAli = col(['alias']);
+    if (iId < 0 || iTel < 0) throw new Error('formato');
+    jugadores = filas.slice(1).map(f => ({
+      id: String(f[iId] || '').trim(),
+      nombre: String((iNom >= 0 && f[iNom]) || (iAli >= 0 && f[iAli]) || '').trim(),
+      tel: clave9(f[iTel])
+    })).filter(j => j.id && j.tel);
+    if (!jugadores.length) throw new Error('vacío');
+    errorJugadores = '';
+    let guardado = null;
+    try { guardado = localStorage.getItem('liga_jugador_' + torneo); } catch (e) {}
+    jugadorSel = jugadores.find(j => j.id === guardado) || null;
+  } catch (e) {
+    jugadores = [];
+    errorJugadores = 'No se pudo cargar la lista de participantes. Comprueba que el parámetro LINKPAR esté relleno, que el archivo esté compartido para ver con el enlace y que tenga una hoja PARTICIPANTES con las columnas id y teléfono.';
+  }
+}
+
 async function cargarDatos() {
   if (!archivoParam) return;
   const base = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivoParam) + '/gviz/tq?tqx=out:csv&headers=1&sheet=';
@@ -183,18 +231,23 @@ async function cargarDatos() {
   } catch (e) {
     agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo. Comprueba que el archivo esté compartido para ver con el enlace y que la hoja se llame AGENDA.' };
   }
-  if (pa.status === 'fulfilled') telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
+  let idPart = '';
+  if (pa.status === 'fulfilled') {
+    telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
+    idPart = leerParametro(pa.value, 'LINKPAR');
+  }
+  await cargarJugadores(idPart);
   actualizar();
 }
 
 // ---------- pantalla ----------
 function mensaje() {
-  const nombre = $('nombre').value.trim(), lineas = [];
+  const lineas = [];
   if (agenda.estado === 'ok') semanas.forEach(w => agenda.dias.forEach(d => {
     const hs = d.horas.filter(x => w.sel.has(d.cod + '|' + x));
     if (hs.length) lineas.push(w.fechas[d.cod] + ' ' + hs.map(x => x.replace(':', '')).join(' '));
   }));
-  return { nombre, lineas, texto: ['!!D#-' + torneo, 'Jugador: ' + (nombre || '?'), ...lineas].join('\n') };
+  return { jugador: jugadorSel, lineas, texto: ['!!D#-' + torneo, 'Jugador: ' + (jugadorSel ? jugadorSel.id : '?'), ...lineas].join('\n') };
 }
 
 function render(cont) {
@@ -240,20 +293,59 @@ function render(cont) {
   });
 }
 
+function seleccionar(j) {
+  jugadorSel = j;
+  try { localStorage.setItem('liga_jugador_' + torneo, j.id); } catch (e) {}
+}
+
+function buscar() {
+  const cont = $('resultados');
+  cont.innerHTML = '';
+  if (jugadorSel) return;
+  const nota = t => cont.appendChild(el('p', 'nota', t));
+  if (jugadores === null) return nota('Cargando participantes…');
+  if (errorJugadores) return nota(errorJugadores);
+  let t = digitos($('tel').value).replace(/^0034|^34/, '');
+  if (t.length > 9) t = t.slice(-9);
+  if (t.length < 6) return nota('Escribe tu número de teléfono (mínimo 6 cifras) y elige tu nombre.');
+  const r = jugadores.filter(j => j.tel.startsWith(t));
+  if (t.length === 9 && r.length === 1) { seleccionar(r[0]); return; }
+  if (!r.length) return nota(t.length >= 9 ? 'Ese teléfono no está entre los participantes del torneo.' : 'Sin coincidencias de momento.');
+  r.forEach(j => {
+    const b = el('button', '', j.nombre || j.id);
+    b.onclick = () => { seleccionar(j); actualizar(); };
+    cont.appendChild(b);
+  });
+}
+
+function mostrarJugador() {
+  $('buscar').hidden = !!jugadorSel;
+  $('elegido').hidden = !jugadorSel;
+  if (jugadorSel) $('nombreElegido').textContent = jugadorSel.nombre || jugadorSel.id;
+}
+
 function actualizar() {
+  buscar();
+  mostrarJugador();
   const cont = $('contenido');
   cont.innerHTML = '';
   render(cont);
-  const m = mensaje(), listo = m.nombre && m.lineas.length;
+  const m = mensaje(), listo = m.jugador && m.lineas.length;
   $('msg').textContent = m.texto;
   $('wa').disabled = !listo;
   $('copiar').disabled = !listo;
-  $('aviso').textContent = !m.nombre ? 'Escribe tu nombre para poder enviar.'
+  $('aviso').textContent = !m.jugador ? 'Busca tu teléfono y elige tu nombre para poder enviar.'
     : !m.lineas.length ? 'Marca las horas en que puedes jugar.' : '';
-  try { localStorage.setItem('liga_nombre', m.nombre); } catch (e) {}
 }
 
-$('nombre').addEventListener('input', actualizar);
+$('tel').addEventListener('input', actualizar);
+$('cambiar').onclick = () => {
+  jugadorSel = null;
+  try { localStorage.removeItem('liga_jugador_' + torneo); } catch (e) {}
+  $('tel').value = '';
+  actualizar();
+  $('tel').focus();
+};
 $('wa').onclick = () => {
   window.open('https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener');
 };
@@ -265,7 +357,6 @@ $('copiar').onclick = async () => {
     $('aviso').textContent = 'Texto seleccionado: cópialo con el menú del móvil.';
   }
 };
-try { $('nombre').value = localStorage.getItem('liga_nombre') || ''; } catch (e) {}
 actualizar();
 cargarDatos();
 </script>
