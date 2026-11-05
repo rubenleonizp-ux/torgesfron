@@ -211,9 +211,12 @@ async function cargarJugadores(idPart) {
     try { guardado = localStorage.getItem('liga_jugador_' + torneo); } catch (e) {}
     jugadorSel = jugadores.find(j => j.id === guardado) || null;
   } catch (e) {
-    jugadores = [];
-    errorJugadores = 'No se pudo cargar la lista de participantes. Comprueba que el parámetro LINKPAR esté relleno, que el archivo esté compartido para ver con el enlace y que tenga una hoja PARTICIPANTES con las columnas id y teléfono.';
-  }
+  console.error('Error cargando participantes:', e);
+  jugadores = [];
+  errorJugadores =
+    'No se pudo cargar la lista de participantes. Motivo técnico: ' +
+    (e && e.message ? e.message : String(e));
+}
 }
 
 async function cargarDatos() {
