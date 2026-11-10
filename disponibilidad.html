@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-kHI59pdv1vZ+YGf2Vo0+akuNGmIdLa9hHknsUxm8zsM='; style-src 'sha256-JZbZMqXN1JtyvkNaPpjobVrckusNyCVPnPzPblVF6mE='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Disponibilidad de la liga de frontón</title>
 <style>
@@ -89,15 +91,20 @@ h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
       <button id="copiar">Copiar texto</button>
     </div>
     <p id="aviso" role="status"></p>
+    <p id="destino" class="nota"></p>
   </section>
 </main>
 <script>
 'use strict';
 
 const NUM_SEMANAS = 5;
+// Los parámetros del enlace solo se aceptan con formato de identificador (nada de espacios, saltos de línea ni símbolos).
+const RE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+const RE_ARCHIVO = /^[A-Za-z0-9_-]{20,100}$/;
 const params = new URLSearchParams(location.search);
-const torneo = (params.get('t') || '').trim();
-const archivoParam = (params.get('p') || '').trim();
+const pideT = (params.get('t') || '').trim(), pideP = (params.get('p') || '').trim();
+const torneo = RE_ID.test(pideT) ? pideT : '';
+const archivoParam = RE_ARCHIVO.test(pideP) ? pideP : '';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OFF = { L: 0, M: 1, X: 2, J: 3, V: 4, S: 5, D: 6 };
@@ -134,7 +141,7 @@ for (let i = 0; i < NUM_SEMANAS; i++) {
   });
 }
 
-let agenda = { estado: archivoParam ? 'cargando' : 'error', msg: 'Este enlace no indica de qué torneo leer la agenda.' };
+let agenda = { estado: (archivoParam && torneo) ? 'cargando' : 'error', msg: 'El enlace no es válido: falta el torneo o el archivo de datos.' };
 let telefono = '';
 let jugadores = null;
 let jugadorSel = null;
@@ -173,7 +180,7 @@ function construirAgenda(filas) {
     const horas = f.slice(1).map(r => (r[i] || '').trim()).filter(Boolean).map(x => {
       const m = /^(\d{1,2}):(\d{2})/.exec(x);
       return m ? pad(+m[1]) + ':' + m[2] : x;
-    });
+    }).filter(x => /^\d{2}:\d{2}$/.test(x));
     dias.push({ cod, abrev: ABREV[cod], horas: [...new Set(horas)].sort() });
   });
   if (!dias.length) throw new Error('Formato de AGENDA no reconocido');
@@ -184,150 +191,73 @@ function construirAgenda(filas) {
 function leerParametro(filas, clave) {
   const objetivo = norm(clave);
   const fila = filas.find(r => norm(r[0] || '') === objetivo);
-  const valor = fila ? String(fila[1] || '').trim() : '';
-  console.log('[PARAM] Buscar', clave, '=> fila:', fila, '=> valor:', valor);
-  return valor;
+  return fila ? String(fila[1] || '').trim() : '';
 }
 
 function limpiarTelefono(v) {
   let d = String(v || '').replace(/\D/g, '');
   if (d.startsWith('00')) d = d.slice(2);
-  return d.length === 9 ? '34' + d : d;
+  return (d.length === 9 ? '34' + d : d).slice(0, 15);
 }
 
 const digitos = s => String(s || '').replace(/\D/g, '');
 const clave9 = s => { const d = digitos(s); return d.length > 9 ? d.slice(-9) : d; };
+const motivo = e => (e && e.message) ? e.message : 'error desconocido';
+
+async function pedirHoja(archivo, hoja) {
+  const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivo) + '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent(hoja);
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(hoja + ': error ' + r.status);
+  const texto = await r.text();
+  if (/^\s*</.test(texto)) throw new Error(hoja + ': el archivo no es accesible');   // página de acceso en lugar de datos
+  return parseCSV(texto);
+}
 
 async function cargarJugadores(idPart) {
-  console.group('[PARTICIPANTES] Diagnóstico');
   try {
-    console.log('LINKPAR recibido:', JSON.stringify(idPart));
-    if (!idPart) throw new Error('sin LINKPAR');
-
-    const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(idPart) +
-      '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent('PARTICIPANTES');
-    console.log('URL solicitada:', url);
-
-    const r = await fetch(url, { cache: 'no-store' });
-    console.log('Respuesta HTTP:', r.status, r.statusText, 'URL final:', r.url);
-    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText);
-
-    const texto = await r.text();
-    console.log('CSV recibido, primeros 500 caracteres:', texto.slice(0, 500));
-    const filas = parseCSV(texto);
-    console.log('Filas interpretadas:', filas);
-
+    const u = /\/d\/([\w-]+)/.exec(idPart || '');
+    if (u) idPart = u[1];
+    if (!RE_ARCHIVO.test(idPart || '')) throw new Error('LINKPAR vacío o no válido');
+    const filas = await pedirHoja(idPart, 'PARTICIPANTES');
     const cab = (filas[0] || []).map(norm);
-    console.log('Cabeceras normalizadas:', cab);
-
     const col = nombres => cab.findIndex(c => nombres.includes(c));
-    const iId = col(['id', 'id_participante', 'idparticipante']);
-    const iTel = col(['telefono', 'tel', 'movil']);
-    const iNom = col(['nombre_completo', 'nombre', 'jugador']);
-    const iAli = col(['alias']);
-    console.log('Índices:', { iId, iTel, iNom, iAli });
-
-    if (iId < 0 || iTel < 0) throw new Error('formato: faltan las columnas id o telefono');
-
+    const iId = col(['id', 'id_participante', 'idparticipante']), iTel = col(['telefono', 'tel', 'movil']);
+    const iNom = col(['nombre_completo', 'nombre', 'jugador']), iAli = col(['alias']);
+    if (iId < 0 || iTel < 0) throw new Error('faltan las columnas id o telefono');
     jugadores = filas.slice(1).map(f => ({
       id: String(f[iId] || '').trim(),
-      nombre: String((iNom >= 0 && f[iNom]) || (iAli >= 0 && f[iAli]) || '').trim(),
+      nombre: String((iNom >= 0 && f[iNom]) || (iAli >= 0 && f[iAli]) || '').trim().slice(0, 80),
       tel: clave9(f[iTel])
-    })).filter(j => j.id && j.tel);
-
-    console.log('Jugadores válidos:', jugadores);
-    if (!jugadores.length) throw new Error('vacío: no hay filas con id y teléfono válidos');
-
+    })).filter(j => RE_ID.test(j.id) && j.tel);
+    if (!jugadores.length) throw new Error('no hay filas con id y teléfono válidos');
     errorJugadores = '';
     let guardado = null;
     try { guardado = localStorage.getItem('liga_jugador_' + torneo); } catch (e) {}
     jugadorSel = jugadores.find(j => j.id === guardado) || null;
-    console.log('Carga correcta. Jugador guardado:', guardado, 'Jugador seleccionado:', jugadorSel);
   } catch (e) {
-    console.error('ERROR al cargar PARTICIPANTES:', e);
     jugadores = [];
-    const motivo = e && e.message ? e.message : String(e);
-    errorJugadores = 'No se pudo cargar la lista de participantes. Motivo técnico: ' + motivo;
-  } finally {
-    console.groupEnd();
+    errorJugadores = 'No se pudo cargar la lista de participantes (' + motivo(e) + '). Comprueba que el archivo esté compartido para ver con el enlace.';
   }
 }
 
 async function cargarDatos() {
-  console.group('[INICIO] Carga de datos');
-  console.log('URL actual:', location.href);
-  console.log('Parámetro t:', JSON.stringify(torneo));
-  console.log('Parámetro p:', JSON.stringify(archivoParam));
-
-  if (!archivoParam) {
-    console.error('Falta el parámetro p en la URL');
-    console.groupEnd();
-    return;
-  }
-
-  const base = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivoParam) +
-    '/gviz/tq?tqx=out:csv&headers=1&sheet=';
-
-  const pedir = async hoja => {
-    const url = base + encodeURIComponent(hoja);
-    console.group('[HOJA] ' + hoja);
-    try {
-      console.log('URL solicitada:', url);
-      const r = await fetch(url, { cache: 'no-store' });
-      console.log('Respuesta HTTP:', r.status, r.statusText, 'URL final:', r.url);
-      if (!r.ok) throw new Error(hoja + ': HTTP ' + r.status + ' ' + r.statusText);
-      const texto = await r.text();
-      console.log('CSV recibido, primeros 500 caracteres:', texto.slice(0, 500));
-      const filas = parseCSV(texto);
-      console.log('Filas interpretadas:', filas);
-      return filas;
-    } catch (e) {
-      console.error('Error solicitando ' + hoja + ':', e);
-      throw e;
-    } finally {
-      console.groupEnd();
-    }
-  };
-
-  const [ag, pa] = await Promise.allSettled([pedir('AGENDA'), pedir('PARAM')]);
-  console.log('Resultado AGENDA:', ag);
-  console.log('Resultado PARAM:', pa);
-
+  if (!archivoParam || !torneo) return;
+  const [ag, pa] = await Promise.allSettled([pedirHoja(archivoParam, 'AGENDA'), pedirHoja(archivoParam, 'PARAM')]);
   try {
     if (ag.status !== 'fulfilled') throw ag.reason;
     agenda = construirAgenda(ag.value);
   } catch (e) {
-    console.error('Error procesando AGENDA:', e);
-    agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo. Motivo técnico: ' + (e.message || String(e)) };
+    agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo (' + motivo(e) + '). Comprueba que el archivo esté compartido para ver con el enlace y que la hoja se llame AGENDA.' };
   }
-
   if (pa.status !== 'fulfilled') {
-    const motivo = pa.reason && pa.reason.message ? pa.reason.message : String(pa.reason);
-    console.error('PARAM no se pudo descargar:', pa.reason);
     jugadores = [];
-    errorJugadores = 'No se pudo leer la hoja PARAM. Motivo técnico: ' + motivo;
+    errorJugadores = 'No se pudo leer la hoja PARAM del torneo (' + motivo(pa.reason) + ').';
     actualizar();
-    console.groupEnd();
     return;
   }
-
-  console.log('PARAM completo:', pa.value);
   telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
-  const idPart = leerParametro(pa.value, 'LINKPAR');
-  console.log('TELEFONO final para WhatsApp:', JSON.stringify(telefono));
-  console.log('LINKPAR final:', JSON.stringify(idPart));
-
-  if (!idPart) {
-    jugadores = [];
-    errorJugadores = 'La hoja PARAM se descargó, pero LINKPAR está vacío o no se encontró. Mira en consola el bloque [PARAM].';
-    actualizar();
-    console.groupEnd();
-    return;
-  }
-
-  await cargarJugadores(idPart);
+  await cargarJugadores(leerParametro(pa.value, 'LINKPAR'));
   actualizar();
-  console.groupEnd();
 }
 
 function mensaje() {
@@ -423,6 +353,7 @@ function actualizar() {
   $('msg').textContent = m.texto;
   $('wa').disabled = !listo;
   $('copiar').disabled = !listo;
+  $('destino').textContent = telefono ? 'El mensaje se enviará al número terminado en ' + telefono.slice(-3) + '.' : 'Elegirás el chat al enviar.';
   $('aviso').textContent = !m.jugador ? 'Busca tu teléfono y elige tu nombre para poder enviar.'
     : !m.lineas.length ? 'Marca las horas en que puedes jugar.' : '';
 }
