@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rVaCsW+HClxtgR0Mh/mwnim4axCHmgHXAw6I2dkdsVE='; style-src 'sha256-d4Sn/QXRUbaMwSU2GR/DuWEzGUyowil+K18F94b6yT0='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torneo</title>
+<meta name="tr-torneos" content="PEGAR_AQUI_EL_ID_DEL_ARCHIVO_TR_TORNEOS">
+<style>
+:root{--pared:#1d5c43;--pared-tx:#f2f7f3;--bg:#eef2ee;--card:#fff;--tx:#14231b;--mut:#5b6b62;--brd:#c9d5cc;--chip:#e4ebe5;--on:#1d5c43;--on-tx:#fff;--linea:#c8382d}
+@media (prefers-color-scheme:dark){:root{--bg:#101612;--card:#18211b;--tx:#e8efe9;--mut:#9db0a3;--brd:#2e3d33;--chip:#233028;--on:#4fb383;--on-tx:#08170f;--pared:#0f3a2a;--linea:#e0554a}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 "Avenir Next","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+header{background:var(--pared);color:var(--pared-tx);padding:22px 16px 18px;border-bottom:4px solid var(--linea)}
+header h1{margin:0 auto;max-width:720px;font-size:1.45rem;font-weight:800}
+header p{margin:6px auto 0;max-width:720px;opacity:.9;font-size:.95rem}
+main{max-width:720px;margin:0 auto;padding:14px 10px 40px}
+button,select,input{font:inherit;color:var(--tx)}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--linea);outline-offset:2px}
+.nota{color:var(--mut);font-size:.92rem;margin:8px 4px}
+.pasos{display:flex;gap:6px;margin:12px 0}
+.pasos button{flex:1;min-height:44px;padding:0 4px;font-weight:700;font-size:.9rem;background:var(--chip);border:2px solid transparent;border-radius:8px;cursor:pointer}
+.pasos button.on{background:var(--on);color:var(--on-tx)}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:10px;margin-bottom:12px}
+.card h2{margin:0 0 6px;font-size:1.05rem;font-weight:800}
+details.card>summary{cursor:pointer;font-weight:800;min-height:32px}
+.sub{color:var(--mut);font-weight:400;font-size:.9rem}
+.fila{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--brd)}
+.fila .n{flex:1;min-width:0}
+.fila select,.buscar{min-height:40px;padding:0 6px;background:var(--card);border:2px solid var(--brd);border-radius:8px}
+.buscar{width:100%;margin-bottom:10px;min-height:44px;padding:0 12px}
+.chip{min-height:40px;min-width:40px;padding:0 10px;font-weight:700;background:var(--chip);border:2px solid transparent;border-radius:8px;cursor:pointer}
+.chip.on{background:var(--on);color:var(--on-tx)}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dos h3{margin:4px 0;font-size:.9rem;color:var(--mut)}
+.lista{display:flex;flex-direction:column;gap:6px}
+.lista .chip{text-align:left;font-weight:500;min-height:44px}
+.lista .chip.sel{background:var(--linea);color:#fff;font-weight:700}
+.par{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--chip);border-radius:8px;padding:6px 8px;margin-top:6px}
+.acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.b{min-height:44px;padding:0 14px;font-weight:700;background:transparent;border:2px solid var(--on);border-radius:8px;cursor:pointer}
+.b.pri{background:var(--on);color:var(--on-tx)}
+.b:disabled{opacity:.45;cursor:not-allowed}
+.aviso{color:var(--linea);font-size:.9rem}
+.ok{color:var(--on);font-size:.9rem}
+pre{margin:0 0 12px;white-space:pre-wrap;word-break:break-word;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--chip);padding:12px;border-radius:8px;min-height:60px}
+.modelo{margin-top:10px}.modelo summary{color:var(--mut);cursor:pointer}
+.cargando{padding:18px 4px;color:var(--mut)}
+.err{background:var(--card);border:1px solid var(--linea);border-radius:10px;padding:12px;color:var(--tx)}
+.err b{color:var(--linea)}
+h2.sec{margin:18px 4px 8px;font-size:1.1rem;font-weight:800}
+.sem{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px}
+.sem strong{flex:1;text-align:center;font-size:.98rem}
+.dia{margin:10px 0 4px;font-weight:800;font-size:.95rem}
+.dia.hoy{color:var(--linea)}
+.partido{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--brd)}
+.partido .h{font-weight:800}
+.partido .eq{min-width:0;word-break:break-word}
+.partido .meta{color:var(--mut);font-size:.82rem}
+.partido .res{font-weight:800;white-space:nowrap}
+.etq{display:inline-block;background:var(--chip);border-radius:6px;padding:0 6px;font-size:.78rem;font-weight:700;margin-right:6px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th{color:var(--mut);font-weight:700;font-size:.78rem;text-align:right;padding:4px 6px;border-bottom:2px solid var(--brd)}
+td{text-align:right;padding:7px 6px;border-top:1px solid var(--brd);white-space:nowrap}
+th.l,td.l{text-align:left;white-space:normal;word-break:break-word;min-width:130px}
+td.pts{font-weight:800}
+tr.top td:first-child{border-left:4px solid var(--on)}
+.vacio{color:var(--mut);padding:8px 2px}
+.grp{margin:10px 0 4px;font-weight:800}
+.err{background:var(--card);border:1px solid var(--linea);border-radius:10px;padding:12px}
+.err b{color:var(--linea)}
+.cargando{padding:18px 4px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header><h1 id="titulo">Torneo</h1><p id="sub">Clasificación y partidos por división.</p></header>
+<main>
+  <div id="contenido"><p class="cargando">Cargando el torneo…</p></div>
+</main>
+<script>
+// Enlace: ?t=T05  (ID del torneo). Los archivos del torneo se buscan en TR_Torneos (columnas PARTIDOS_ID, CLASIFICACION_ID y PARAM_ID).
+// El ID del archivo TR_Torneos va en la etiqueta <meta name="tr-torneos"> del principio de esta página.
+// Los archivos de TR_Torneos, de partidos, de clasificación y de parámetros deben estar compartidos para ver con el enlace.
+const TR_TORNEOS_ID = ((document.querySelector('meta[name="tr-torneos"]') || {}).content || '').trim();   // se configura en la etiqueta <meta name="tr-torneos"> del principio
+const HOJA_TORNEOS = 'Torneos';
+const ZONA = 'Europe/Madrid';
+
+const RE_ID = /^[A-Za-z0-9_-]{1,40}$/, RE_ARCHIVO = /^[A-Za-z0-9_-]{20,100}$/;
+const pideT = (new URLSearchParams(location.search).get('t') || '').trim();
+const torneo = RE_ID.test(pideT) ? pideT : '';
+
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
+const norm = s => String(s ?? '').replace(/^\uFEFF/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+const clave = s => norm(s).replace(/[^a-z0-9]/g, '');
+const p2 = n => String(n).padStart(2, '0');
+const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+let T = null, partidos = [], clasif = [], divisiones = [], divSel = '', semana = '', error = '', cargado = false;
+
+// ---------- lectura de hojas ----------
+function parseCSV(t) {
+  const filas = []; let r = [], c = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { r.push(c); c = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; r.push(c); c = ''; filas.push(r); r = []; }
+    else c += ch;
+  }
+  if (c !== '' || r.length) { r.push(c); filas.push(r); }
+  return filas;
+}
+async function pedirHoja(archivo, hoja) {
+  const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivo) + '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent(hoja);
+  let r;
+  try { r = await fetch(url, { cache: 'no-store' }); } catch (e) { throw new Error(hoja + ': no se pudo acceder al archivo (¿está compartido para ver con el enlace?)'); }
+  if (!r.ok) throw new Error(hoja + ': error ' + r.status);
+  const texto = await r.text();
+  if (/^\s*</.test(texto)) throw new Error(hoja + ': el archivo no es accesible; compártelo para ver con el enlace');
+  return parseCSV(texto);
+}
+// filas -> objetos con las cabeceras normalizadas (idpartido, tantoslocal, ...)
+function objetos(filas) {
+  const cab = (filas[0] || []).map(clave);
+  return filas.slice(1).filter(r => r.some(c => String(c).trim() !== '')).map(r => Object.fromEntries(cab.map((c, i) => [c, String(r[i] ?? '').trim()])));
+}
+const fechaNorm = v => { const s = String(v || '').trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${p2(m[2])}-${p2(m[3])}`;
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return `${m[3]}-${p2(m[2])}-${p2(m[1])}`;
+  return ''; };
+const horaNorm = v => { const m = String(v || '').trim().match(/^(\d{1,2}):(\d{2})/); return m ? `${p2(m[1])}:${m[2]}` : ''; };
+const num = v => { const n = parseFloat(String(v).replace(',', '.')); return Number.isFinite(n) ? n : 0; };
+
+// ---------- fechas ----------
+const iso = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+const aFecha = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const sumar = (s, n) => { const d = aFecha(s); d.setDate(d.getDate() + n); return iso(d); };
+const lunesDe = s => sumar(s, -((aFecha(s).getDay() + 6) % 7));
+const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: ZONA });
+const largo = s => { const d = aFecha(s); return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`; };
+const corto = s => { const d = aFecha(s); return `${d.getDate()} ${MESES[d.getMonth()].slice(0, 3)}`; };
+
+// ---------- carga ----------
+async function cargar() {
+  error = ''; cargado = false; render();
+  try {
+    if (!torneo) throw new Error('El enlace no es válido: falta el ID del torneo (?t=...).');
+    if (!RE_ARCHIVO.test(TR_TORNEOS_ID)) throw new Error('Falta configurar TR_TORNEOS_ID al principio de esta página.');
+    const fila = objetos(await pedirHoja(TR_TORNEOS_ID, HOJA_TORNEOS)).find(r => String(r.id).toUpperCase() === torneo.toUpperCase());
+    if (!fila) throw new Error('No encuentro el torneo "' + torneo + '".');
+    const buscar = re => { const k = Object.keys(fila).find(k => re.test(k)); return k ? fila[k] : ''; };
+    const fp = buscar(/^(id)?partidos(id)?$/), fc = buscar(/^(id)?clasif\w*$|^clasif\w*id$/), fa = buscar(/^(id)?param(id)?$/);
+    if (!RE_ARCHIVO.test(fp) || !RE_ARCHIVO.test(fc)) throw new Error('El torneo no tiene los archivos de partidos y clasificación.');
+    T = { id: fila.id, nombre: fila.nombre || '' };
+    const [P, C, D] = await Promise.all([pedirHoja(fp, 'PARTIDOS'), pedirHoja(fc, 'CLASIFICACION'), RE_ARCHIVO.test(fa) ? pedirHoja(fa, 'DIVISIONES').catch(() => null) : null]);
+    partidos = objetos(P).map(r => ({ id: r.idpartido, jor: parseInt(r.jornada, 10) || 0, div: String(r.division).toUpperCase(), grupo: String(r.grupo).toUpperCase(), local: r.local, visit: r.visitante,
+      estado: String(r.estado).toUpperCase(), tl: r.tantoslocal, tv: r.tantosvisitante, fecha: fechaNorm(r.fecha), hora: horaNorm(r.hora), pista: r.pista })).filter(p => p.id && p.div);
+    clasif = objetos(C).map(r => ({ div: String(r.division).toUpperCase(), grupo: String(r.grupo).toUpperCase(), pos: num(r.pos), equipo: r.equipo, pj: num(r.pj), g: num(r.g), p: num(r.p), dif: num(r.dif), pts: num(r.pts) })).filter(c => c.div && c.equipo);
+    divisiones = [];
+    if (D) objetos(D).forEach(r => { const cod = String(r.division).toUpperCase(); if (RE_ID.test(cod) && (r.activa === undefined || norm(r.activa) === 'si') && !divisiones.some(d => d.cod === cod)) divisiones.push({ cod, nombre: (r.nombre || cod).slice(0, 40) }); });
+    if (!divisiones.length) [...new Set([...clasif.map(c => c.div), ...partidos.map(p => p.div)])].sort().forEach(cod => divisiones.push({ cod, nombre: cod }));
+    if (!divisiones.length) throw new Error('El torneo todavía no tiene divisiones ni partidos.');
+    divSel = divisiones.some(d => d.cod === divSel) ? divSel : divisiones[0].cod;
+    const futuros = partidos.filter(p => p.fecha && p.fecha >= hoy).map(p => p.fecha).sort();
+    semana = lunesDe(futuros[0] || hoy);
+  } catch (e) { error = (e && e.message) ? e.message : 'error desconocido'; }
+  cargado = true; render();
+}
+
+// ---------- pantallas ----------
+const resultado = p => (p.tl !== '' && p.tv !== '') ? `${p.tl} - ${p.tv}` : '';
+const nombreDiv = cod => (divisiones.find(d => d.cod === cod) || { nombre: cod }).nombre;
+function filaPartido(p, conDiv) {
+  const f = el('div', 'partido');
+  f.appendChild(el('div', 'h', p.hora));
+  const c = el('div', 'eq');
+  if (conDiv) c.appendChild(el('span', 'etq', nombreDiv(p.div)));
+  c.appendChild(document.createTextNode(`${p.local} - ${p.visit}`));
+  c.appendChild(el('div', 'meta', `Jornada ${p.jor}${p.pista ? ' · pista ' + p.pista : ''}`));
+  f.appendChild(c); f.appendChild(el('div', 'res', resultado(p)));
+  return f;
+}
+function listaPorDia(card, lista, conDiv) {
+  let dia = '';
+  lista.forEach(p => {
+    if (p.fecha !== dia) { dia = p.fecha; card.appendChild(el('div', 'dia' + (dia === hoy ? ' hoy' : ''), largo(dia) + (dia === hoy ? ' (hoy)' : ''))); }
+    card.appendChild(filaPartido(p, conDiv));
+  });
+}
+const porFecha = (a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora) || a.jor - b.jor;
+function bloqueSemana(c) {
+  c.appendChild(el('h2', 'sec', 'Partidos de la semana'));
+  const card = el('section', 'card'), nav = el('div', 'sem');
+  const a = el('button', 'b', 'Anterior'), s = el('button', 'b', 'Siguiente');
+  a.onclick = () => { semana = sumar(semana, -7); render(); }; s.onclick = () => { semana = sumar(semana, 7); render(); };
+  nav.append(a, el('strong', '', `Del ${corto(semana)} al ${corto(sumar(semana, 6))}`), s); card.appendChild(nav);
+  const fin = sumar(semana, 6), lista = partidos.filter(p => p.fecha && p.hora && p.fecha >= semana && p.fecha <= fin).sort(porFecha);
+  if (!lista.length) card.appendChild(el('p', 'vacio', 'No hay partidos asignados esta semana.')); else listaPorDia(card, lista, true);
+  c.appendChild(card);
+}
+function bloqueClasificacion(c, cod) {
+  const card = el('section', 'card'); card.appendChild(el('h2', '', 'Clasificación'));
+  const filas = clasif.filter(x => x.div === cod), grupos = [...new Set(filas.map(x => x.grupo))].sort();
+  if (!filas.length) card.appendChild(el('p', 'vacio', 'Todavía no hay clasificación.'));
+  grupos.forEach(g => {
+    if (grupos.length > 1) card.appendChild(el('div', 'grp', 'Grupo ' + g));
+    const tw = el('div', 'tw'), t = el('table'), cab = el('tr');
+    [['#', ''], ['Equipo', 'l'], ['PJ', ''], ['G', ''], ['P', ''], ['DIF', ''], ['PTS', '']].forEach(([x, k]) => cab.appendChild(el('th', k, x)));
+    t.appendChild(cab);
+    filas.filter(x => x.grupo === g).sort((a, b) => b.pts - a.pts || b.dif - a.dif || a.pos - b.pos).forEach((x, i) => {
+      const r = el('tr', i === 0 ? 'top' : '');
+      [[i + 1, ''], [x.equipo, 'l'], [x.pj, ''], [x.g, ''], [x.p, ''], [x.dif, ''], [x.pts, 'pts']].forEach(([v, k]) => r.appendChild(el('td', k, String(v))));
+      t.appendChild(r);
+    });
+    tw.appendChild(t); card.appendChild(tw);
+  });
+  c.appendChild(card);
+}
+function bloquePartidos(c, cod) {
+  const card = el('section', 'card'); card.appendChild(el('h2', '', 'Partidos asignados'));
+  const mios = partidos.filter(p => p.div === cod), asig = mios.filter(p => p.fecha && p.hora).sort(porFecha), pend = mios.filter(p => !(p.fecha && p.hora)).length;
+  if (!asig.length) card.appendChild(el('p', 'vacio', 'Todavía no hay partidos asignados.')); else listaPorDia(card, asig, false);
+  if (pend) card.appendChild(el('p', 'nota', `${pend} partidos pendientes de asignar.`));
+  c.appendChild(card);
+}
+function render() {
+  const c = $('contenido'); c.innerHTML = '';
+  $('titulo').textContent = T ? 'Torneo ' + (T.nombre || T.id) : 'Torneo';
+  document.title = T ? 'Torneo ' + (T.nombre || T.id) : 'Torneo';
+  if (!cargado) { c.appendChild(el('p', 'cargando', 'Cargando el torneo…')); return; }
+  if (error) { const e = el('div', 'err'); e.appendChild(el('b', '', 'No se pudo cargar el torneo. ')); e.appendChild(document.createTextNode(error)); c.appendChild(e); return; }
+  bloqueSemana(c);
+  const nav = el('nav', 'pasos'); nav.setAttribute('role', 'tablist'); nav.style.marginTop = '18px';
+  divisiones.forEach(d => { const b = el('button', divSel === d.cod ? 'on' : '', d.nombre); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', divSel === d.cod); b.onclick = () => { divSel = d.cod; render(); }; nav.appendChild(b); });
+  c.appendChild(nav);
+  bloqueClasificacion(c, divSel); bloquePartidos(c, divSel);
+  const act = el('div', 'acc'), r = el('button', 'b', 'Actualizar'); r.onclick = cargar; act.appendChild(r); c.appendChild(act);
+}
+render(); cargar();
+</script>
+</body>
+</html>
