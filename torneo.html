@@ -2,11 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rVaCsW+HClxtgR0Mh/mwnim4axCHmgHXAw6I2dkdsVE='; style-src 'sha256-d4Sn/QXRUbaMwSU2GR/DuWEzGUyowil+K18F94b6yT0='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-sJSy7snFn+6/DZ6Bpl8JP/v4geJirLPK+FWbyT1gpGk='; style-src 'sha256-d4Sn/QXRUbaMwSU2GR/DuWEzGUyowil+K18F94b6yT0='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Torneo</title>
-<meta name="tr-torneos" content="PEGAR_AQUI_EL_ID_DEL_ARCHIVO_TR_TORNEOS">
 <style>
 :root{--pared:#1d5c43;--pared-tx:#f2f7f3;--bg:#eef2ee;--card:#fff;--tx:#14231b;--mut:#5b6b62;--brd:#c9d5cc;--chip:#e4ebe5;--on:#1d5c43;--on-tx:#fff;--linea:#c8382d}
 @media (prefers-color-scheme:dark){:root{--bg:#101612;--card:#18211b;--tx:#e8efe9;--mut:#9db0a3;--brd:#2e3d33;--chip:#233028;--on:#4fb383;--on-tx:#08170f;--pared:#0f3a2a;--linea:#e0554a}}
@@ -80,16 +79,15 @@ tr.top td:first-child{border-left:4px solid var(--on)}
   <div id="contenido"><p class="cargando">Cargando el torneo…</p></div>
 </main>
 <script>
-// Enlace: ?t=T05  (ID del torneo). Los archivos del torneo se buscan en TR_Torneos (columnas PARTIDOS_ID, CLASIFICACION_ID y PARAM_ID).
-// El ID del archivo TR_Torneos va en la etiqueta <meta name="tr-torneos"> del principio de esta página.
-// Los archivos de TR_Torneos, de partidos, de clasificación y de parámetros deben estar compartidos para ver con el enlace.
-const TR_TORNEOS_ID = ((document.querySelector('meta[name="tr-torneos"]') || {}).content || '').trim();   // se configura en la etiqueta <meta name="tr-torneos"> del principio
-const HOJA_TORNEOS = 'Torneos';
+// Enlace: ?t=T05&p=ID_DEL_ARCHIVO_PARAM. De la hoja PARAM se leen LINKPARTI (archivo de partidos) y LINKCLAS (archivo de clasificación);
+// de la hoja DIVISIONES, los nombres de las divisiones. Los tres archivos deben estar compartidos para ver con el enlace.
 const ZONA = 'Europe/Madrid';
 
 const RE_ID = /^[A-Za-z0-9_-]{1,40}$/, RE_ARCHIVO = /^[A-Za-z0-9_-]{20,100}$/;
 const pideT = (new URLSearchParams(location.search).get('t') || '').trim();
+const pideP = (new URLSearchParams(location.search).get('p') || '').trim();
 const torneo = RE_ID.test(pideT) ? pideT : '';
+const archivoParam = RE_ARCHIVO.test(pideP) ? pideP : '';
 
 const $ = id => document.getElementById(id);
 const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
@@ -134,6 +132,8 @@ const fechaNorm = v => { const s = String(v || '').trim(); let m;
   if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return `${m[3]}-${p2(m[2])}-${p2(m[1])}`;
   return ''; };
 const horaNorm = v => { const m = String(v || '').trim().match(/^(\d{1,2}):(\d{2})/); return m ? `${p2(m[1])}:${m[2]}` : ''; };
+function leerParametro(filas, clave) { const f = filas.find(r => norm(r[0]) === norm(clave)); return f ? String(f[1] || '').trim() : ''; }
+const idDe = v => { const u = /\/d\/([\w-]+)/.exec(v || ''); return u ? u[1] : String(v || '').trim(); };   // admite el ID o la URL completa
 const num = v => { const n = parseFloat(String(v).replace(',', '.')); return Number.isFinite(n) ? n : 0; };
 
 // ---------- fechas ----------
@@ -149,15 +149,12 @@ const corto = s => { const d = aFecha(s); return `${d.getDate()} ${MESES[d.getMo
 async function cargar() {
   error = ''; cargado = false; render();
   try {
-    if (!torneo) throw new Error('El enlace no es válido: falta el ID del torneo (?t=...).');
-    if (!RE_ARCHIVO.test(TR_TORNEOS_ID)) throw new Error('Falta configurar TR_TORNEOS_ID al principio de esta página.');
-    const fila = objetos(await pedirHoja(TR_TORNEOS_ID, HOJA_TORNEOS)).find(r => String(r.id).toUpperCase() === torneo.toUpperCase());
-    if (!fila) throw new Error('No encuentro el torneo "' + torneo + '".');
-    const buscar = re => { const k = Object.keys(fila).find(k => re.test(k)); return k ? fila[k] : ''; };
-    const fp = buscar(/^(id)?partidos(id)?$/), fc = buscar(/^(id)?clasif\w*$|^clasif\w*id$/), fa = buscar(/^(id)?param(id)?$/);
-    if (!RE_ARCHIVO.test(fp) || !RE_ARCHIVO.test(fc)) throw new Error('El torneo no tiene los archivos de partidos y clasificación.');
-    T = { id: fila.id, nombre: fila.nombre || '' };
-    const [P, C, D] = await Promise.all([pedirHoja(fp, 'PARTIDOS'), pedirHoja(fc, 'CLASIFICACION'), RE_ARCHIVO.test(fa) ? pedirHoja(fa, 'DIVISIONES').catch(() => null) : null]);
+    if (!torneo || !archivoParam) throw new Error('El enlace no es válido: falta el torneo o el archivo de datos (?t=...&p=...).');
+    const [pa, D] = await Promise.all([pedirHoja(archivoParam, 'PARAM'), pedirHoja(archivoParam, 'DIVISIONES').catch(() => null)]);
+    const fp = idDe(leerParametro(pa, 'LINKPARTI')), fc = idDe(leerParametro(pa, 'LINKCLAS'));
+    if (!RE_ARCHIVO.test(fp) || !RE_ARCHIVO.test(fc)) throw new Error('La hoja PARAM necesita los parámetros LINKPARTI (partidos) y LINKCLAS (clasificación) con el ID de cada archivo.');
+    T = { id: torneo, nombre: leerParametro(pa, 'NOMBRE').slice(0, 60) };
+    const [P, C] = await Promise.all([pedirHoja(fp, 'PARTIDOS'), pedirHoja(fc, 'CLASIFICACION')]);
     partidos = objetos(P).map(r => ({ id: r.idpartido, jor: parseInt(r.jornada, 10) || 0, div: String(r.division).toUpperCase(), grupo: String(r.grupo).toUpperCase(), local: r.local, visit: r.visitante,
       estado: String(r.estado).toUpperCase(), tl: r.tantoslocal, tv: r.tantosvisitante, fecha: fechaNorm(r.fecha), hora: horaNorm(r.hora), pista: r.pista })).filter(p => p.id && p.div);
     clasif = objetos(C).map(r => ({ div: String(r.division).toUpperCase(), grupo: String(r.grupo).toUpperCase(), pos: num(r.pos), equipo: r.equipo, pj: num(r.pj), g: num(r.g), p: num(r.p), dif: num(r.dif), pts: num(r.pts) })).filter(c => c.div && c.equipo);
@@ -245,3 +242,4 @@ render(); cargar();
 </script>
 </body>
 </html>
+
