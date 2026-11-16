@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-qyn7clFiek7WACx3fLxcfR7Qob6QJkcCxtrqQUf47vk='; style-src 'sha256-gOnwSeSJUxtCMTQaXlNzkNHI57DgSowLPJrT47uPcYk='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asignación de partidos</title>
+<style>
+:root{
+  --pared:#1d5c43; --pared-tx:#f2f7f3;
+  --bg:#eef2ee; --card:#ffffff; --tx:#14231b; --mut:#5b6b62; --brd:#c9d5cc;
+  --chip:#e4ebe5; --on:#1d5c43; --on-tx:#ffffff; --linea:#c8382d;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#101612; --card:#18211b; --tx:#e8efe9; --mut:#9db0a3; --brd:#2e3d33;
+        --chip:#233028; --on:#4fb383; --on-tx:#08170f; --pared:#0f3a2a; --linea:#e0554a;}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font:16px/1.45 "Avenir Next","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+header{background:var(--pared);color:var(--pared-tx);padding:22px 16px 18px;border-bottom:4px solid var(--linea)}
+header h1{margin:0 auto;max-width:640px;font-size:1.45rem;font-weight:800;letter-spacing:-.01em}
+header p{margin:6px auto 0;max-width:640px;opacity:.9;font-size:.95rem}
+main{max-width:640px;margin:0 auto;padding:16px 10px 40px}
+label.nombre{display:block;font-weight:700;margin:0 4px 6px}
+label.nombre input{display:block;width:100%;margin-top:6px;padding:12px;font:inherit;color:var(--tx);
+  background:var(--card);border:2px solid var(--brd);border-radius:8px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--linea);outline-offset:2px}
+h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
+.nota{color:var(--mut);font-size:.92rem;margin:8px 4px}
+.semana{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:10px 8px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 8px}
+.top span{color:var(--mut);font-size:.9rem}
+.cols{display:grid;gap:4px}
+.col{display:flex;flex-direction:column;gap:4px}
+.dh{text-align:center;font-size:11px;line-height:1.15;color:var(--mut);padding-bottom:2px}
+.dh b{display:block;font-size:15px;color:var(--tx)}
+.dh.f,.dh.f b{color:var(--linea)}
+.hs{min-height:44px;width:100%;padding:0;font:inherit;font-size:.85rem;color:var(--tx);background:var(--chip);
+  border:2px solid transparent;border-radius:6px;cursor:pointer}
+.hs.on{background:var(--on);color:var(--on-tx);font-weight:700}
+.acciones2{display:flex;gap:8px;margin-top:10px}
+.b{min-height:44px;flex:1;padding:0 8px;font:inherit;font-weight:700;color:var(--tx);background:transparent;
+  border:2px solid var(--on);border-radius:8px;cursor:pointer}
+.b.pri{flex:1.5;background:var(--on);color:var(--on-tx)}
+[hidden]{display:none!important}
+.quien{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);
+  border:1px solid var(--brd);border-radius:10px;padding:10px 12px}
+.quien small{display:block;color:var(--mut);font-size:.8rem}
+.quien strong{font-size:1.05rem}
+.quien .b{flex:0 0 auto;min-height:40px;padding:0 12px}
+.res{display:flex;flex-direction:column;gap:6px;margin:8px 0 0}
+.res button{min-height:44px;text-align:left;padding:0 12px;font:inherit;color:var(--tx);background:var(--card);
+  border:2px solid var(--brd);border-radius:8px;cursor:pointer}
+.dh button{all:unset;display:block;width:100%;text-align:center;cursor:pointer;border-radius:6px;padding:2px 0}
+.dh button:focus-visible{outline:3px solid var(--linea);outline-offset:2px}
+.dh button:disabled{cursor:default;opacity:.4}
+.hs:disabled{opacity:.35;cursor:not-allowed}
+.acciones2{flex-wrap:wrap}
+.acciones2 .b{flex:1 1 120px}
+.resumen{margin:6px 4px 0;color:var(--mut);font-size:.92rem}
+.salida{margin-top:22px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px}
+.salida h2{margin:0 0 8px}
+.salida pre{margin:0 0 12px;white-space:pre-wrap;word-break:break-word;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;
+  background:var(--chip);padding:12px;border-radius:8px;min-height:60px}
+.acciones{display:flex;gap:8px;flex-wrap:wrap}
+.acciones button{flex:1 1 140px;padding:13px;font:inherit;font-weight:700;border-radius:8px;cursor:pointer;
+  border:2px solid var(--on);background:transparent;color:var(--tx)}
+.acciones button.pri{background:var(--on);color:var(--on-tx)}
+.acciones button:disabled{opacity:.45;cursor:not-allowed}
+#aviso{min-height:1.4em;margin:10px 0 0;color:var(--mut);font-size:.92rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Asignación de partidos</h1>
+  <p>Marca los días y las horas en que se pueden jugar partidos y envía el mensaje para que se asignen.</p>
+</header>
+<main>
+  <div id="contenido"><p class="nota">Cargando el horario…</p></div>
+  <p id="resumen" class="resumen"></p>
+  <section class="salida">
+    <h2>Mensaje</h2>
+    <pre id="msg"></pre>
+    <div class="acciones">
+      <button id="wa" class="pri">Enviar por WhatsApp</button>
+      <button id="copiar">Copiar texto</button>
+    </div>
+    <p id="aviso" role="status"></p>
+    <p id="destino" class="nota"></p>
+  </section>
+</main>
+<script>
+'use strict';
+// Enlace: ?t=T05&p=ID_DEL_ARCHIVO_PARAM. De ese archivo se leen las hojas AGENDA (horas de la instalación por día) y PARAM (TELEFONO).
+const NUM_SEMANAS = 4;   // semana actual y las siguientes
+const ZONA = 'Europe/Madrid';
+const RE_ID = /^[A-Za-z0-9_-]{1,40}$/, RE_ARCHIVO = /^[A-Za-z0-9_-]{20,100}$/;
+const params = new URLSearchParams(location.search);
+const pideT = (params.get('t') || '').trim(), pideP = (params.get('p') || '').trim();
+const torneo = RE_ID.test(pideT) ? pideT : '';
+const archivoParam = RE_ARCHIVO.test(pideP) ? pideP : '';
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const OFF = { L: 0, M: 1, X: 2, J: 3, V: 4, S: 5, D: 6 };
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
+const pad = n => String(n).padStart(2, '0');
+const norm = s => String(s ?? '').replace(/^\uFEFF/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+// ---------- fechas (texto AAAA-MM-DD) ----------
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const aFecha = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const sumar = (s, n) => { const d = aFecha(s); d.setDate(d.getDate() + n); return iso(d); };
+const lunesDe = s => sumar(s, -((aFecha(s).getDay() + 6) % 7));
+const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: ZONA });
+function semanaISO(s) {
+  const d = aFecha(s), t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return Math.ceil(((t - new Date(Date.UTC(t.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7);
+}
+const semanas = Array.from({ length: NUM_SEMANAS }, (_, i) => {
+  const lunes = sumar(lunesDe(hoy), 7 * i), dom = sumar(lunes, 6), a = aFecha(lunes), b = aFecha(dom);
+  return { num: semanaISO(lunes), fechas: Object.fromEntries(Object.entries(OFF).map(([c, k]) => [c, sumar(lunes, k)])), sel: new Set(),
+    rango: a.getMonth() === b.getMonth() ? `${a.getDate()} – ${b.getDate()} ${MESES[b.getMonth()]}` : `${a.getDate()} ${MESES[a.getMonth()]} – ${b.getDate()} ${MESES[b.getMonth()]}` };
+});
+
+let agenda = { estado: (archivoParam && torneo) ? 'cargando' : 'error', msg: 'El enlace no es válido: falta el torneo o el archivo de datos.' };
+let telefono = '';
+
+// ---------- lectura de las hojas ----------
+function parseCSV(t) {
+  const filas = []; let r = [], c = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { r.push(c); c = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; r.push(c); c = ''; filas.push(r); r = []; }
+    else c += ch;
+  }
+  if (c !== '' || r.length) { r.push(c); filas.push(r); }
+  return filas;
+}
+async function pedirHoja(archivo, hoja) {
+  const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(archivo) + '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent(hoja);
+  let r;
+  try { r = await fetch(url, { cache: 'no-store' }); } catch (e) { throw new Error(hoja + ': no se pudo acceder al archivo (¿está compartido para ver con el enlace?)'); }
+  if (!r.ok) throw new Error(hoja + ': error ' + r.status);
+  const texto = await r.text();
+  if (/^\s*</.test(texto)) throw new Error(hoja + ': el archivo no es accesible; compártelo para ver con el enlace');
+  return parseCSV(texto);
+}
+// AGENDA: una columna por día (LUNES...DOMINGO) y debajo, solo las horas disponibles de ese día
+function construirAgenda(filas) {
+  const codigos = { lunes: 'L', martes: 'M', miercoles: 'X', jueves: 'J', viernes: 'V', sabado: 'S', domingo: 'D' };
+  const ABREV = { L: 'Lun', M: 'Mar', X: 'Mié', J: 'Jue', V: 'Vie', S: 'Sáb', D: 'Dom' };
+  const f = filas.filter(r => r.some(c => String(c).trim() !== ''));
+  const dias = [];
+  (f[0] || []).forEach((n, i) => {
+    const cod = codigos[norm(n)];
+    if (!cod || dias.some(d => d.cod === cod)) return;
+    const horas = f.slice(1).map(r => String(r[i] || '').trim()).filter(Boolean).map(x => { const m = /^(\d{1,2}):(\d{2})/.exec(x); return m ? pad(+m[1]) + ':' + m[2] : x; }).filter(x => /^\d{2}:\d{2}$/.test(x));
+    dias.push({ cod, abrev: ABREV[cod], horas: [...new Set(horas)].sort() });
+  });
+  if (!dias.length) throw new Error('Formato de AGENDA no reconocido');
+  dias.sort((a, b) => OFF[a.cod] - OFF[b.cod]);
+  return { estado: 'ok', dias };
+}
+function limpiarTelefono(v) {
+  let d = String(v || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  return (d.length === 9 ? '34' + d : d).slice(0, 15);
+}
+async function cargar() {
+  if (!archivoParam || !torneo) return;
+  const [ag, pa] = await Promise.allSettled([pedirHoja(archivoParam, 'AGENDA'), pedirHoja(archivoParam, 'PARAM')]);
+  try { if (ag.status !== 'fulfilled') throw ag.reason; agenda = construirAgenda(ag.value); }
+  catch (e) { agenda = { estado: 'error', msg: 'No se pudo leer la agenda del torneo (' + ((e && e.message) || 'error desconocido') + ').' }; }
+  if (pa.status === 'fulfilled') { const f = pa.value.find(r => norm(r[0]) === 'telefono'); telefono = limpiarTelefono(f ? f[1] : ''); }
+  actualizar();
+}
+
+// ---------- mensaje ----------
+// !!ASIG-T05 y una línea por día con horas marcadas: AAAAMMDD HHMM HHMM
+function mensaje() {
+  const lineas = []; let huecos = 0;
+  if (agenda.estado === 'ok') semanas.forEach(w => agenda.dias.forEach(d => {
+    const hs = d.horas.filter(x => w.sel.has(d.cod + '|' + x));
+    if (hs.length) { huecos += hs.length; lineas.push(w.fechas[d.cod].replace(/-/g, '') + ' ' + hs.map(x => x.replace(':', '')).join(' ')); }
+  }));
+  return { lineas, huecos, texto: ['!!ASIG-' + torneo, ...lineas].join('\n') };
+}
+
+// ---------- pantalla ----------
+const pasado = (w, d) => w.fechas[d.cod] < hoy;
+function render(cont) {
+  if (agenda.estado !== 'ok') { cont.appendChild(el('p', 'nota', agenda.estado === 'cargando' ? 'Cargando el horario…' : agenda.msg)); return; }
+  cont.appendChild(el('p', 'nota', 'Marca los huecos (día y hora) en que se pueden jugar partidos. Toca el día para marcar o quitar todas sus horas.'));
+  semanas.forEach(w => {
+    const card = el('div', 'semana'), top = el('div', 'top');
+    top.appendChild(el('strong', '', 'Semana ' + w.num)); top.appendChild(el('span', '', w.rango)); card.appendChild(top);
+    const g = el('div', 'cols'); g.style.gridTemplateColumns = 'repeat(' + agenda.dias.length + ', 1fr)';
+    agenda.dias.forEach(d => {
+      const col = el('div', 'col'), pas = pasado(w, d), todas = d.horas.length > 0 && d.horas.every(x => w.sel.has(d.cod + '|' + x));
+      const cab = el('div', 'dh' + (d.cod === 'S' || d.cod === 'D' ? ' f' : '')), bd = el('button', '', d.abrev);
+      bd.appendChild(el('b', '', String(+w.fechas[d.cod].slice(8)))); bd.disabled = pas || !d.horas.length;
+      bd.setAttribute('aria-label', (todas ? 'Quitar' : 'Marcar') + ' todas las horas del ' + d.abrev + ' ' + +w.fechas[d.cod].slice(8));
+      bd.onclick = () => { d.horas.forEach(x => todas ? w.sel.delete(d.cod + '|' + x) : w.sel.add(d.cod + '|' + x)); actualizar(); };
+      cab.appendChild(bd); col.appendChild(cab);
+      d.horas.forEach(x => {
+        const k = d.cod + '|' + x, on = w.sel.has(k), b = el('button', 'hs' + (on ? ' on' : ''), x);
+        b.disabled = pas; b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', d.abrev + ' ' + +w.fechas[d.cod].slice(8) + ', ' + x);
+        b.onclick = () => { on ? w.sel.delete(k) : w.sel.add(k); actualizar(); };
+        col.appendChild(b);
+      });
+      g.appendChild(col);
+    });
+    card.appendChild(g);
+    const acc = el('div', 'acciones2');
+    const todo = el('button', 'b', 'Marcar toda la semana'); todo.onclick = () => { agenda.dias.forEach(d => { if (!pasado(w, d)) d.horas.forEach(x => w.sel.add(d.cod + '|' + x)); }); actualizar(); };
+    const limp = el('button', 'b', 'Limpiar semana'); limp.onclick = () => { w.sel.clear(); actualizar(); };
+    const cop = el('button', 'b pri', 'Copiar a las demás semanas'); cop.onclick = () => { semanas.forEach(o => { if (o !== w) o.sel = new Set([...w.sel].filter(k => { const d = agenda.dias.find(x => x.cod === k[0]); return d && !pasado(o, d); })); }); actualizar(); };
+    acc.append(todo, limp, cop); card.appendChild(acc); cont.appendChild(card);
+  });
+}
+function actualizar() {
+  const cont = $('contenido'); cont.innerHTML = ''; render(cont);
+  const m = mensaje();
+  $('msg').textContent = m.texto; $('wa').disabled = !m.lineas.length; $('copiar').disabled = !m.lineas.length;
+  $('resumen').textContent = m.lineas.length ? `${m.huecos} huecos marcados en ${m.lineas.length} días.` : '';
+  $('destino').textContent = telefono ? 'El mensaje se enviará al número terminado en ' + telefono.slice(-3) + '.' : 'Elegirás el chat al enviar.';
+  $('aviso').textContent = m.lineas.length ? '' : 'Marca al menos un hueco para poder enviar.';
+}
+$('wa').onclick = () => { window.open('https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensaje().texto), '_blank', 'noopener'); };
+$('copiar').onclick = async () => {
+  try { await navigator.clipboard.writeText(mensaje().texto); $('aviso').textContent = 'Texto copiado.'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents($('msg')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('aviso').textContent = 'Texto seleccionado: cópialo con el menú del móvil.'; }
+};
+actualizar(); cargar();
+</script>
+</body>
+</html>
