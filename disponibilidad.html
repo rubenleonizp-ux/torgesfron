@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-kHI59pdv1vZ+YGf2Vo0+akuNGmIdLa9hHknsUxm8zsM='; style-src 'sha256-JZbZMqXN1JtyvkNaPpjobVrckusNyCVPnPzPblVF6mE='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-KmqLLXqsCYrq8E/b+itE9P+dJtqJ89rOVBswMJxYbp8='; style-src 'sha256-JZbZMqXN1JtyvkNaPpjobVrckusNyCVPnPzPblVF6mE='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Disponibilidad de la liga de frontón</title>
@@ -82,6 +82,7 @@ h2{margin:20px 4px 8px;font-size:1.1rem;font-weight:800}
     <div><small>Jugador</small><strong id="nombreElegido"></strong></div>
     <button id="cambiar" class="b">Cambiar jugador</button>
   </div>
+  <p id="estadoDispo" class="nota"></p>
   <div id="contenido"></div>
   <section class="salida">
     <h2>Mensaje</h2>
@@ -146,6 +147,7 @@ let telefono = '';
 let jugadores = null;
 let jugadorSel = null;
 let errorJugadores = '';
+let archivoDispo = '', estadoDispo = '', original = {}, seqCarga = 0;   // disponibilidad ya guardada del jugador elegido
 
 function parseCSV(t) {
   const filas = []; let r = [], c = '', q = false;
@@ -256,16 +258,58 @@ async function cargarDatos() {
     return;
   }
   telefono = limpiarTelefono(leerParametro(pa.value, 'TELEFONO'));
+  for (const nombre of ['LINKDISPO', 'LINKPROCESADA', 'LINKPROC', 'LINKDISPONIBILIDAD']) {   // archivo que contiene la hoja PROCESADA
+    const v = leerParametro(pa.value, nombre); if (!v) continue;
+    const u = /\/d\/([\w-]+)/.exec(v), id = u ? u[1] : v; archivoDispo = RE_ARCHIVO.test(id) ? id : ''; break;
+  }
   await cargarJugadores(leerParametro(pa.value, 'LINKPAR'));
+  if (jugadorSel) cargarDisponibilidad(jugadorSel);
+  actualizar();
+}
+
+// PROCESADA (Fecha, Hora, Jugador): se leen las filas del jugador y se marcan en las semanas visibles
+const aYmd = v => { const s = String(v || '').trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1] + pad(m[2]) + pad(m[3]);
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return m[3] + pad(m[2]) + pad(m[1]);
+  if (/^\d{5}$/.test(s)) return new Date(Date.UTC(1899, 11, 30) + Number(s) * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  return ''; };
+const aHora = v => { const m = String(v || '').trim().match(/^(\d{1,2}):(\d{2})/); return m ? pad(m[1]) + ':' + m[2] : ''; };
+async function cargarDisponibilidad(j) {
+  const mi = ++seqCarga;
+  semanas.forEach(w => w.sel.clear()); original = {};
+  if (!archivoDispo) { estadoDispo = 'No se puede cargar tu disponibilidad anterior (falta el parámetro LINKDISPO en PARAM). Márcala de nuevo.'; actualizar(); return; }
+  estadoDispo = 'Cargando tu disponibilidad…'; actualizar();
+  try {
+    const filas = await pedirHoja(archivoDispo, 'PROCESADA');
+    if (mi !== seqCarga || jugadorSel !== j) return;                       // el jugador cambió mientras se cargaba
+    const cab = (filas[0] || []).map(norm), col = nombres => cab.findIndex(c => nombres.includes(c));
+    const iF = col(['fecha']), iH = col(['hora']), iJ = col(['jugador', 'id', 'idjugador', 'iddejugador']);
+    if (iF < 0 || iH < 0 || iJ < 0) throw new Error('PROCESADA necesita las columnas Fecha, Hora y Jugador');
+    const mias = new Set();
+    filas.slice(1).forEach(f => { if (String(f[iJ] || '').trim().toUpperCase() === j.id.toUpperCase()) { const d = aYmd(f[iF]), h = aHora(f[iH]); if (d && h) mias.add(d + '|' + h); } });
+    let marcadas = 0, sinHorario = 0;
+    if (agenda.estado === 'ok') semanas.forEach(w => {
+      const fechas = new Set(Object.values(w.fechas)); let n = 0;
+      agenda.dias.forEach(d => d.horas.forEach(x => { if (mias.has(w.fechas[d.cod] + '|' + x)) { w.sel.add(d.cod + '|' + x); n++; } }));
+      mias.forEach(k => { const [d, h] = k.split('|'); if (fechas.has(d) && !agenda.dias.some(z => w.fechas[z.cod] === d && z.horas.includes(h))) sinHorario++; });
+      if (n) original[w.fechas.L] = true; marcadas += n;
+    });
+    estadoDispo = marcadas ? `Tu disponibilidad guardada está cargada (${marcadas === 1 ? '1 hora' : marcadas + ' horas'}). Puedes modificarla.` : 'No tenías disponibilidad guardada para estas semanas.';
+    if (sinHorario) estadoDispo += sinHorario === 1 ? ' 1 hora guardada ya no está en el horario y se perderá si envías.' : ` ${sinHorario} horas guardadas ya no están en el horario y se perderán si envías.`;
+  } catch (e) { if (mi !== seqCarga) return; estadoDispo = 'No se pudo cargar tu disponibilidad anterior (' + ((e && e.message) || 'error desconocido') + '). Puedes marcarla de nuevo.'; }
   actualizar();
 }
 
 function mensaje() {
   const lineas = [];
-  if (agenda.estado === 'ok') semanas.forEach(w => agenda.dias.forEach(d => {
-    const hs = d.horas.filter(x => w.sel.has(d.cod + '|' + x));
-    if (hs.length) lineas.push(w.fechas[d.cod] + ' ' + hs.map(x => x.replace(':', '')).join(' '));
-  }));
+  if (agenda.estado === 'ok') semanas.forEach(w => {
+    const antes = lineas.length;
+    agenda.dias.forEach(d => {
+      const hs = d.horas.filter(x => w.sel.has(d.cod + '|' + x));
+      if (hs.length) lineas.push(w.fechas[d.cod] + ' ' + hs.map(x => x.replace(':', '')).join(' '));
+    });
+    if (lineas.length === antes && original[w.fechas.L]) lineas.push(w.fechas.L);   // semana que tenía horas y se deja vacía: solo la fecha del lunes
+  });
   return { jugador: jugadorSel, lineas, texto: ['!!D#-' + torneo, 'Jugador: ' + (jugadorSel ? jugadorSel.id : '?'), ...lineas].join('\n') };
 }
 
@@ -315,6 +359,7 @@ function render(cont) {
 function seleccionar(j) {
   jugadorSel = j;
   try { localStorage.setItem('liga_jugador_' + torneo, j.id); } catch (e) {}
+  setTimeout(() => cargarDisponibilidad(j), 0);
 }
 
 function buscar() {
@@ -356,11 +401,14 @@ function actualizar() {
   $('destino').textContent = telefono ? 'El mensaje se enviará al número terminado en ' + telefono.slice(-3) + '.' : 'Elegirás el chat al enviar.';
   $('aviso').textContent = !m.jugador ? 'Busca tu teléfono y elige tu nombre para poder enviar.'
     : !m.lineas.length ? 'Marca las horas en que puedes jugar.' : '';
+  $('estadoDispo').textContent = jugadorSel ? estadoDispo : '';
+  const vacias = semanas.filter(w => original[w.fechas.L] && !w.sel.size).map(w => w.rango);
+  if (jugadorSel && vacias.length && !$('aviso').textContent) $('aviso').textContent = 'Se vaciarán las semanas: ' + vacias.join(', ') + '.';
 }
 
 $('tel').addEventListener('input', actualizar);
 $('cambiar').onclick = () => {
-  jugadorSel = null;
+  jugadorSel = null; semanas.forEach(w => w.sel.clear()); original = {}; estadoDispo = ''; seqCarga++;
   try { localStorage.removeItem('liga_jugador_' + torneo); } catch (e) {}
   $('tel').value = '';
   actualizar();
