@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-HRTXAkt14A7QK+F2+ICjAkHivLvGlp7uiND3HgZ21J4='; style-src 'sha256-nMK59sA2o6/d/4KtGcmofxVLNdG+lxO9s9O+FR2XMWk='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torneo</title>
+<style>
+:root{--pared:#1d5c43;--pared-tx:#f2f7f3;--bg:#eef2ee;--card:#fff;--tx:#14231b;--mut:#5b6b62;--brd:#c9d5cc;--chip:#e4ebe5;--on:#1d5c43;--on-tx:#fff;--linea:#c8382d}
+@media (prefers-color-scheme:dark){:root{--bg:#101612;--card:#18211b;--tx:#e8efe9;--mut:#9db0a3;--brd:#2e3d33;--chip:#233028;--on:#4fb383;--on-tx:#08170f;--pared:#0f3a2a;--linea:#e0554a}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 "Avenir Next","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+header{background:var(--pared);color:var(--pared-tx);padding:22px 16px 18px;border-bottom:4px solid var(--linea)}
+header h1{margin:0 auto;max-width:720px;font-size:1.45rem;font-weight:800}
+header p{margin:6px auto 0;max-width:720px;opacity:.9;font-size:.95rem}
+main{max-width:720px;margin:0 auto;padding:22px 14px 40px}
+.menu{display:flex;flex-direction:column;gap:14px}
+a.op{display:block;min-height:84px;padding:16px 18px;background:var(--card);color:var(--tx);text-decoration:none;border:2px solid var(--on);border-radius:12px}
+a.op:hover{background:var(--chip)}
+a.op:focus-visible{outline:3px solid var(--linea);outline-offset:2px}
+a.op strong{display:block;font-size:1.15rem;font-weight:800;letter-spacing:.02em}
+a.op span{display:block;margin-top:2px;color:var(--mut);font-size:.92rem}
+a.op.pri{background:var(--on);color:var(--on-tx)}
+a.op.pri span{color:var(--on-tx);opacity:.9}
+a.op.pri:hover{filter:brightness(1.08)}
+.err{background:var(--card);border:1px solid var(--linea);border-radius:10px;padding:12px}
+.err b{color:var(--linea)}
+</style>
+</head>
+<body>
+<header><h1 id="titulo">Torneo</h1><p id="sub">¿Qué quieres hacer?</p></header>
+<main><div id="contenido"></div></main>
+<script>
+// Enlace de entrada: portada.html?t=T05&p=ID_DEL_ARCHIVO_PARAM
+// Solo reparte los dos parámetros a las demás páginas; no lee ninguna hoja.
+// Si alguna de las páginas se llama distinto o está en otra carpeta, cámbialo aquí.
+const PAGINA_DISPONIBILIDAD = 'disponibilidad.html';
+const PAGINA_TORNEO = 'ver_torneo.html';
+
+const RE_ID = /^[A-Za-z0-9_-]{1,40}$/, RE_ARCHIVO = /^[A-Za-z0-9_-]{20,100}$/;
+const q = new URLSearchParams(location.search);
+const t = (q.get('t') || '').trim(), p = (q.get('p') || '').trim();
+const el = (tag, c, x) => { const n = document.createElement(tag); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
+const c = document.getElementById('contenido');
+if (!RE_ID.test(t) || !RE_ARCHIVO.test(p)) {
+  const e = el('div', 'err'); e.appendChild(el('b', '', 'El enlace no es válido. '));
+  e.appendChild(document.createTextNode('Faltan el torneo o el archivo de datos (?t=...&p=...). Pide el enlace correcto al organizador.'));
+  c.appendChild(e);
+} else {
+  document.getElementById('titulo').textContent = 'Torneo ' + t;
+  document.title = 'Torneo ' + t;
+  const destino = pagina => pagina + '?t=' + encodeURIComponent(t) + '&p=' + encodeURIComponent(p);
+  const menu = el('nav', 'menu'); menu.setAttribute('aria-label', 'Opciones del torneo');
+  [['DISPONIBILIDAD', 'Indica cuándo puedes jugar', PAGINA_DISPONIBILIDAD, true], ['PARTIDOS y CLASIFICACIÓN', 'Consulta los partidos, los resultados y la clasificación', PAGINA_TORNEO, true]].forEach(([titulo, sub, pagina, pri]) => {
+    const a = el('a', 'op' + (pri ? ' pri' : '')); a.href = destino(pagina); a.rel = 'noopener';
+    a.append(el('strong', '', titulo), el('span', '', sub)); menu.appendChild(a);
+  });
+  c.appendChild(menu);
+}
+</script>
+</body>
+</html>
