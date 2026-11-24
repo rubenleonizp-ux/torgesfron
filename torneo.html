@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-afnFGlNDeS22akLLfovfdU8ftmOr/PZRWO54xzWnnF4='; style-src 'sha256-t1tpc0PYqzx0zvQi4yynS1iZdDx6DuIG78Z9C517FYk='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5cCI4e2ooCpK5gTRvYH1nJp9oLOOvdgRIjj4D7su4sE='; style-src 'sha256-LV1MKAqYIS/3Fa+byB3DMVA30YYsmptI53JhnpXTtcA='; connect-src https://docs.google.com https://*.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Torneo</title>
@@ -73,6 +73,14 @@ tr.top td:first-child{border-left:4px solid var(--on)}
 .err{background:var(--card);border:1px solid var(--linea);border-radius:10px;padding:12px}
 .err b{color:var(--linea)}
 .cargando{padding:18px 4px;color:var(--mut)}
+.etq.marcador{background:var(--on);color:var(--on-tx);font-size:.9rem;padding:6px 10px;margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dos-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;margin-bottom:12px}
+.dos-col .card{margin-bottom:0}
+@media (max-width:480px){.dos-col{grid-template-columns:1fr}}
+.mini{padding:8px 0;border-top:1px solid var(--brd);color:var(--mut);font-size:.82rem}
+.lin{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.lin .nm{min-width:0;word-break:break-word}
+.lin .tt{font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -182,18 +190,20 @@ const resultado = p => (p.tl !== '' && p.tv !== '') ? `${p.tl} - ${p.tv}` : '';
 const nombreDiv = cod => (divisiones.find(d => d.cod === cod) || { nombre: cod }).nombre;
 const limpioEq = s => String(s || '').replace(/\s+/g, ' ').trim();
 const mensajeResultado = p => '!!R-' + torneo + '\n' + limpioEq(p.local) + ' - \n' + limpioEq(p.visit) + ' - ';
+const jugado = p => String(p.estado).toUpperCase() === 'JUGADO' && resultado(p) !== '';
+const asignado = p => p.fecha && p.hora && !jugado(p);
 function filaPartido(p, conDiv) {
   const f = el('div', 'partido');
   f.appendChild(el('div', 'h', p.hora));
   const c = el('div', 'eq');
   if (conDiv) c.appendChild(el('span', 'etq', nombreDiv(p.div)));
   c.appendChild(document.createTextNode(`${p.local} - ${p.visit}`));
-  const meta = el('div', 'meta', p.pista ? 'pista ' + p.pista : '');
-  if (resultado(p)) { if (p.pista) meta.appendChild(document.createTextNode(' · ')); meta.appendChild(el('span', 'res', resultado(p))); }
-  c.appendChild(meta); f.appendChild(c);
-  const b = el('button', 'etq btn', 'Enviar Resultado'); b.setAttribute('aria-label', `Enviar resultado de ${limpioEq(p.local)} contra ${limpioEq(p.visit)}`);
-  b.onclick = () => window.open('https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensajeResultado(p)), '_blank', 'noopener');
-  f.appendChild(b);
+  c.appendChild(el('div', 'meta', (p.pista ? 'pista ' + p.pista : '') + (jugado(p) ? (p.pista ? ' · ' : '') + 'jugado' : '')));
+  f.appendChild(c);
+  if (jugado(p)) { f.appendChild(el('span', 'etq marcador', resultado(p))); return f; }
+  const bt = el('button', 'etq btn', 'Enviar Resultado'); bt.setAttribute('aria-label', `Enviar resultado de ${limpioEq(p.local)} contra ${limpioEq(p.visit)}`);
+  bt.onclick = () => window.open('https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensajeResultado(p)), '_blank', 'noopener');
+  f.appendChild(bt);
   return f;
 }
 function listaPorDia(card, lista, conDiv) {
@@ -233,11 +243,27 @@ function bloqueClasificacion(c, cod) {
   c.appendChild(card);
 }
 function bloquePartidos(c, cod) {
+  const mios = partidos.filter(p => p.div === cod);
+  const asig = mios.filter(asignado).sort(porFecha);
+  const jug = mios.filter(jugado).sort((x, y) => (y.fecha + y.hora).localeCompare(x.fecha + x.hora));
+  const pend = mios.filter(p => !jugado(p) && !(p.fecha && p.hora)).sort((x, y) => x.jor - y.jor);
+  // 1) Asignados (aún sin jugar): como hasta ahora, con su botón
   const card = el('section', 'card'); card.appendChild(el('h2', '', 'Partidos asignados'));
-  const mios = partidos.filter(p => p.div === cod), asig = mios.filter(p => p.fecha && p.hora).sort(porFecha), pend = mios.filter(p => !(p.fecha && p.hora)).length;
-  if (!asig.length) card.appendChild(el('p', 'vacio', 'Todavía no hay partidos asignados.')); else listaPorDia(card, asig, false);
-  if (pend) card.appendChild(el('p', 'nota', `${pend} partidos pendientes de asignar.`));
+  if (!asig.length) card.appendChild(el('p', 'vacio', 'Ahora mismo no hay partidos asignados.')); else listaPorDia(card, asig, false);
   c.appendChild(card);
+  // 2) Debajo, en dos columnas: jugados (izquierda) y pendientes (derecha)
+  const dos = el('div', 'dos-col');
+  const izq = el('section', 'card'); izq.appendChild(el('h2', '', 'Jugados'));
+  if (!jug.length) izq.appendChild(el('p', 'vacio', 'Todavía no se ha jugado ninguno.'));
+  jug.forEach(p => {
+    const m = el('div', 'mini');
+    [[p.local, p.tl], [p.visit, p.tv]].forEach(([n, t]) => { const l = el('div', 'lin'); l.append(el('span', 'nm', n), el('span', 'tt', String(t))); m.appendChild(l); });
+    izq.appendChild(m);
+  });
+  const der = el('section', 'card'); der.appendChild(el('h2', '', 'Pendientes'));
+  if (!pend.length) der.appendChild(el('p', 'vacio', 'No quedan partidos por asignar.'));
+  pend.forEach(p => { const m = el('div', 'mini'); m.appendChild(el('div', '', p.local)); m.appendChild(el('div', '', p.visit)); der.appendChild(m); });
+  dos.append(izq, der); c.appendChild(dos);
 }
 function render() {
   const c = $('contenido'); c.innerHTML = '';
